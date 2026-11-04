@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>هل اول | سامانه جامع مدیریت مالی، بودجه‌بندی و شکار پرتی پول</title>
+    <!-- Google Fonts: Vazirmatn -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'Tahoma', 'sans-serif']
+                    },
+                    colors: {
+                        baseBg: '#0b0f19',
+                        surfaceDark: '#111827',
+                        cardDark: '#1e293b',
+                        cyanAccent: '#06b6d4',
+                        emeraldAccent: '#10b981',
+                        amberAccent: '#f59e0b',
+                        coralAccent: '#f43f5e'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f1f5f9;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            overflow-x: hidden;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .view-panel {
+            animation: slideFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideFade {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pyramid-step {
+            transition: all 0.3s ease;
+        }
+        .pyramid-step:hover {
+            transform: scale(1.015);
+        }
+        .accordion-content {
+            transition: max-height 0.3s ease-in-out, opacity 0.25s ease-in-out;
+            overflow: hidden;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-cyan-500 selection:text-slate-950">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 left-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-surfaceDark border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-all">
+            <div class="flex items-center gap-3 mb-3 text-amber-400">
+                <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+                <h3 id="confirmModalTitle" class="text-lg font-bold text-white">تایید عملیات</h3>
+            </div>
+            <p id="confirmModalMessage" class="text-sm text-slate-300 leading-relaxed mb-6">آیا از انجام این کار اطمینان دارید؟</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all">انصراف</button>
+                <button id="confirmModalActionBtn" class="px-4 py-2 rounded-xl bg-coralAccent hover:bg-rose-600 text-white text-xs font-bold transition-all">تایید و اجرا</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Header -->
+    <header class="bg-surfaceDark/95 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-6 py-3 sticky top-0 z-40 shadow-lg">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <!-- Brand & Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-500/20 via-emerald-500/20 to-amber-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-inner">
+                    <i class="fa-solid fa-layer-group text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-extrabold text-base sm:text-lg text-white tracking-tight">سامانه جامع «هل اول»</h1>
+                        <span id="headerLevelBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">سطح ۲ هرم</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">مدیریت مالی زندگی، بودجه‌بندی اول ماه و شکارچی پرتی پول (الگوی صادق الحسینی)</p>
+                </div>
+            </div>
+
+            <!-- Date, Save Status & Backup Tools -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                <!-- Live Jalali Date & Time -->
+                <div class="flex items-center gap-2 bg-cardDark/90 border border-slate-700/70 px-3 py-1.5 rounded-xl text-xs text-slate-200 shadow-sm">
+                    <i class="fa-regular fa-calendar-check text-cyan-400"></i>
+                    <span id="liveShamsiDate" class="font-medium">در حال بارگذاری تاریخ...</span>
+                    <span class="text-slate-600">|</span>
+                    <span id="liveClock" class="font-mono text-amber-400 font-bold" dir="ltr">00:00:00</span>
+                </div>
+
+                <!-- Auto-save status indicator -->
+                <div class="hidden xl:flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1.5 rounded-xl text-[11px] text-emerald-300">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="saveStatusText">ذخیره خودکار فعال</span>
+                </div>
+
+                <!-- Backup / Restore / Sample Data Buttons -->
+                <div class="flex items-center gap-1.5">
+                    <button onclick="exportDataJson()" title="پشتیبان‌گیری (دانلود فایل JSON)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-download text-cyan-400"></i>
+                        <span class="hidden md:inline">پشتیبان‌گیری</span>
+                    </button>
+                    <label title="بازگردانی اطلاعات از فایل JSON" class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-upload text-emerald-400"></i>
+                        <span class="hidden md:inline">بازگردانی</span>
+                        <input type="file" id="importJsonInput" accept=".json" onchange="importDataJson(event)" class="hidden">
+                    </label>
+                    <button onclick="promptLoadSampleData()" title="بارگذاری داده‌های نمونه برای تست سریع" class="bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span class="hidden sm:inline">داده نمونه</span>
+                    </button>
+                    <!-- Toggle Left Accordion Drawer on Mobile/Desktop -->
+                    <button onclick="toggleLeftSidebar()" title="باز و بسته کردن منوی کشویی" class="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-bars-staggered"></i>
+                        <span>منوی بخش‌ها</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout:
+         In RTL, the first child appears on the RIGHT (Main Active View Area),
+         and the second child appears on the LEFT (Collapsible Accordion Navigation Menu). -->
+    <div class="flex-1 flex flex-col lg:flex-row relative overflow-hidden">
+
+        <!-- RIGHT PANEL: Active Section Content Area (Only the selected view is displayed here) -->
+        <main id="mainContentWorkspace" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 order-2 lg:order-1">
+
+            <!-- Quick Top KPI Strip (Always visible for instant awareness) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+                <div class="bg-surfaceDark/90 border border-slate-800/90 p-3.5 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] text-slate-400 block">درآمد ثبت‌شده ماه</span>
+                        <span id="kpiMonthlyIncome" class="text-sm sm:text-base font-extrabold text-emerald-400 mt-0.5 block">۰ تومان</span>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                    </div>
+                </div>
+
+                <div class="bg-surfaceDark/90 border border-slate-800/90 p-3.5 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] text-slate-400 block">کل خرج‌های ثبت‌شده</span>
+                        <span id="kpiMonthlyExpense" class="text-sm sm:text-base font-extrabold text-slate-100 mt-0.5 block">۰ تومان</span>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-slate-700/40 text-slate-300 flex items-center justify-center">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                </div>
+
+                <div class="bg-surfaceDark/90 border border-coralAccent/30 p-3.5 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] text-rose-300/90 block">کل پرتی پول (ثبتی + پنهان)</span>
+                        <span id="kpiTotalLeaks" class="text-sm sm:text-base font-extrabold text-coralAccent mt-0.5 block">۰ تومان</span>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-coralAccent/15 text-coralAccent flex items-center justify-center">
+                        <i class="fa-solid fa-droplet-slash"></i>
+                    </div>
+                </div>
+
+                <div class="bg-surfaceDark/90 border border-cyan-500/30 p-3.5 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] text-cyan-300/90 block">پس‌انداز و جریان نقد آزاد</span>
+                        <span id="kpiNetCashflow" class="text-sm sm:text-base font-extrabold text-cyan-400 mt-0.5 block">۰ تومان</span>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
+                        <i class="fa-solid fa-piggy-bank"></i>
+                    </div>
+                </div>
+
+                <div class="col-span-2 sm:col-span-1 bg-surfaceDark/90 border border-amber-500/30 p-3.5 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] text-amber-300/90 block">نرخ پس‌انداز واقعی</span>
+                        <span id="kpiSavingsRate" class="text-sm sm:text-base font-extrabold text-amber-400 mt-0.5 block">۰٪</span>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-percent"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =========================================================================
+                 VIEW 1: داشبورد و هرم مالی ۵ سطحی «هل اول» (تعیین سطح و فرمول صعود)
+                 ========================================================================= -->
+            <section id="view-pyramid" class="view-panel space-y-6">
+                <!-- Banner Header -->
+                <div class="bg-gradient-to-l from-surfaceDark via-cardDark to-surfaceDark p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold mb-2">
+                            <i class="fa-solid fa-mountain-sun"></i>
+                            <span>فصل اول و دوم کتاب هل اول: معماری ثروت</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white">هرم مالی ۵ سطحی «هل اول» و فرمول صعود</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed max-w-3xl">
+                            در الگوی صادق الحسینی، حرکت دادن قطار سنگین مالی در ابتدا بیشترین انرژی را می‌برد («هل اول»). بدون بستن نشت‌های مالی و ساختن سپر امنیت، ورود به سرمایه‌گذاری پرریسک به سقوط منجر می‌شود.
+                        </p>
+                    </div>
+                    <button onclick="openView('leaks')" class="shrink-0 bg-coralAccent hover:bg-rose-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-all shadow-lg flex items-center gap-2">
+                        <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                        <span>شکار سریع پرتی‌های این ماه</span>
+                    </button>
+                </div>
+
+                <!-- Pyramid Interactive Grid: Visual 5-Step Pyramid + Macro Financial Inputs -->
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+
+                    <!-- Visual 5-Level Pyramid (7 cols) -->
+                    <div class="xl:col-span-7 bg-surfaceDark p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-white text-base flex items-center gap-2">
+                                <i class="fa-solid fa-sitemap text-cyan-400"></i>
+                                <span>هرم ۵ پله‌ای تکامل مالی (روی هر سطح کلیک کنید)</span>
+                            </h3>
+                            <span class="text-[11px] text-slate-400">پله فعلی شما با کادر درخشان مشخص شده است</span>
+                        </div>
+
+                        <!-- 5 Levels from Top (5) to Base (1) -->
+                        <div class="space-y-3 my-auto flex flex-col items-center">
+
+                            <!-- Level 5 -->
+                            <div id="pyrCard-5" onclick="selectPyramidLevelInfo(5)" class="pyramid-step cursor-pointer w-full sm:w-8/12 p-3.5 rounded-2xl border border-slate-700/70 bg-cardDark/60 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center font-black text-sm shrink-0">۵</div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-bold text-sm text-white">سطح ۵: استقلال و آزادی مالی</h4>
+                                            <span id="pyrBadge-5" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-purple-500 text-slate-950 font-extrabold">جایگاه فعلی شما</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-400">درآمد غیرفعال دارایی‌ها $\ge$ کل هزینه‌های زندگی ($25\times$ هزینه سالانه)</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-crown text-purple-400 text-lg"></i>
+                            </div>
+
+                            <!-- Level 4 -->
+                            <div id="pyrCard-4" onclick="selectPyramidLevelInfo(4)" class="pyramid-step cursor-pointer w-full sm:w-9/12 p-3.5 rounded-2xl border border-slate-700/70 bg-cardDark/60 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-black text-sm shrink-0">۴</div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-bold text-sm text-white">سطح ۴: انباشت و سرمایه‌گذاری ضدتورمی</h4>
+                                            <span id="pyrBadge-4" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 font-extrabold">جایگاه فعلی شما</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-400">نرخ پس‌انداز $\ge 20\%$ + تبدیل مستمر مازاد ریالی به سبد دارایی مولد</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-seedling text-emerald-400 text-lg"></i>
+                            </div>
+
+                            <!-- Level 3 -->
+                            <div id="pyrCard-3" onclick="selectPyramidLevelInfo(3)" class="pyramid-step cursor-pointer w-full sm:w-10/12 p-3.5 rounded-2xl border border-slate-700/70 bg-cardDark/60 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-black text-sm shrink-0">۳</div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-bold text-sm text-white">سطح ۳: امنیت و ثبات مالی (سپر دفاعی)</h4>
+                                            <span id="pyrBadge-3" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950 font-extrabold">جایگاه فعلی شما</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-400">بدهی مصرفی صفر + تکمیل صندوق اضطراری (۳ تا ۶ ماه هزینه ضروری)</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-shield-halved text-cyan-400 text-lg"></i>
+                            </div>
+
+                            <!-- Level 2 -->
+                            <div id="pyrCard-2" onclick="selectPyramidLevelInfo(2)" class="pyramid-step cursor-pointer w-full sm:w-11/12 p-3.5 rounded-2xl border border-slate-700/70 bg-cardDark/60 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-sm shrink-0">۲</div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-bold text-sm text-white">سطح ۲: بقا و کنترل جریان نقد (هل اول)</h4>
+                                            <span id="pyrBadge-2" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-extrabold">جایگاه فعلی شما</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-400">تراز ماهانه مثبت ($\text{Income} \ge \text{Expenses}$) و شروع ثبت و مهار پرتی‌ها</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-scale-balanced text-amber-400 text-lg"></i>
+                            </div>
+
+                            <!-- Level 1 -->
+                            <div id="pyrCard-1" onclick="selectPyramidLevelInfo(1)" class="pyramid-step cursor-pointer w-full p-3.5 rounded-2xl border border-slate-700/70 bg-cardDark/60 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-coralAccent/15 text-coralAccent flex items-center justify-center font-black text-sm shrink-0">۱</div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-bold text-sm text-white">سطح ۱: بحران و نشت مالی (تراز منفی)</h4>
+                                            <span id="pyrBadge-1" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-coralAccent text-white font-extrabold">جایگاه فعلی شما</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-400">هزینه‌ها بیشتر از درآمد ($CF < 0$)، بدهی‌های مصرفی معوق و پرتی شدید پول</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-triangle-exclamation text-coralAccent text-lg"></i>
+                            </div>
+                        </div>
+
+                        <!-- Selected Level Detail Box -->
+                        <div id="selectedLevelDetailBox" class="mt-5 p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+                            <!-- Filled by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Macro Profile Inputs & Formula Box for Next Level (5 cols) -->
+                    <div class="xl:col-span-5 flex flex-col gap-6">
+
+                        <!-- User Balance Sheet / Pyramid Parameters -->
+                        <div class="bg-surfaceDark p-6 rounded-2xl border border-slate-800 shadow-lg">
+                            <h3 class="font-bold text-white text-base mb-1 flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-amber-400"></i>
+                                <span>اطلاعات پایه دارایی و سپر امنیتی شما</span>
+                            </h3>
+                            <p class="text-[11px] text-slate-400 mb-4">جریان درآمد و هزینه ماهانه به‌طور خودکار از تراکنش‌های شما خوانده می‌شود. دارایی‌ها و بدهی کلان خود را وارد کنید:</p>
+
+                            <div class="space-y-3.5">
+                                <div>
+                                    <label class="flex justify-between text-xs text-slate-300 mb-1">
+                                        <span>موجودی فعلی صندوق اضطراری (سپر نقد):</span>
+                                        <span id="lblEmergencyFund" class="text-cyan-400 font-bold">۰ تومان</span>
+                                    </label>
+                                    <input type="number" id="inpEmergencyFund" oninput="updateProfileInputs()" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+                                </div>
+
+                                <div>
+                                    <label class="flex justify-between text-xs text-slate-300 mb-1">
+                                        <span>کل بدهی‌های بد / مصرفی (کارت اعتباری، قرض معوق):</span>
+                                        <span id="lblBadDebt" class="text-coralAccent font-bold">۰ تومان</span>
+                                    </label>
+                                    <input type="number" id="inpBadDebt" oninput="updateProfileInputs()" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-coralAccent">
+                                </div>
+
+                                <div>
+                                    <label class="flex justify-between text-xs text-slate-300 mb-1">
+                                        <span>ارزش کل دارایی‌های سرمایه‌گذاری‌شده مولد (طلا، سهام و...):</span>
+                                        <span id="lblInvestedAssets" class="text-emerald-400 font-bold">۰ تومان</span>
+                                    </label>
+                                    <input type="number" id="inpInvestedAssets" oninput="updateProfileInputs()" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3 pt-1">
+                                    <div>
+                                        <label class="block text-[11px] text-slate-400 mb-1">هدف صندوق اضطراری</label>
+                                        <select id="inpEmergencyMonths" onchange="updateProfileInputs()" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+                                            <option value="3">۳ ماه هزینه‌های ضروری</option>
+                                            <option value="6">۶ ماه هزینه‌های ضروری (پیشنهاد کتاب)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] text-slate-400 mb-1">درآمد غیرفعال ماهانه فعلی</label>
+                                        <input type="number" id="inpPassiveIncome" oninput="updateProfileInputs()" placeholder="تومان در ماه" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formula Box: Next Level Ascension Roadmap -->
+                        <div class="bg-gradient-to-br from-cardDark via-surfaceDark to-slate-900 p-6 rounded-2xl border border-cyan-500/40 shadow-xl flex-1 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-xs font-extrabold text-cyan-400 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-rocket"></i>
+                                        <span>باکس فرمول صعود به پله بعدی هرم</span>
+                                    </span>
+                                    <span id="formulaCurrentLevelTag" class="text-xs font-black px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">سطح ۲</span>
+                                </div>
+
+                                <div id="nextLevelFormulaContent" class="space-y-3 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                                    <!-- Dynamically populated with exact numbers and months to reach next level -->
+                                </div>
+                            </div>
+
+                            <!-- Progress bar toward next level -->
+                            <div class="mt-5 pt-4 border-t border-slate-800">
+                                <div class="flex justify-between text-xs mb-1.5">
+                                    <span class="text-slate-400">درصد پیشرفت در ماموریت سطح فعلی:</span>
+                                    <span id="nextLevelProgressPct" class="font-bold text-cyan-400">۰٪</span>
+                                </div>
+                                <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden p-0.5">
+                                    <div id="nextLevelProgressBar" class="h-full bg-gradient-to-l from-cyan-400 to-emerald-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================================
+                 VIEW 2: بودجه‌بندی اول ماه (سقف‌گذاری هوشمند ۵۰/۳۰/۲۰)
+                 ========================================================================= -->
+            <section id="view-budget" class="view-panel space-y-6 hidden">
+                <div class="bg-surfaceDark p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold mb-2">
+                            <i class="fa-solid fa-compass-drafting"></i>
+                            <span>فصل سوم کتاب هل اول: بودجه‌بندی پیشگیرانه</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white">تعیین بودجه اول ماه و سقف‌گذاری سرفصل‌ها</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                            بر اساس قاعده کتاب، شما باید <strong>قبل از شروع ماه</strong> به هر ریال از درآمدتان ماموریت بدهید؛ در غیر این صورت پول‌های سرگردان به «پرتی» تبدیل می‌شوند.
+                        </p>
+                    </div>
+
+                    <!-- Planned Monthly Income & Auto 50/30/20 Button -->
+                    <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto bg-cardDark/80 p-3.5 rounded-2xl border border-slate-700">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">درآمد پیش‌بینی‌شده اول ماه (تومان):</label>
+                            <input type="number" id="inpPlannedIncome" oninput="updatePlannedIncome()" class="bg-baseBg border border-slate-600 rounded-xl px-3 py-2 text-sm font-bold text-emerald-400 focus:outline-none focus:border-emerald-400 w-44 sm:w-52">
+                        </div>
+                        <button onclick="apply503020Formula()" class="bg-gradient-to-l from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-slate-950 font-extrabold px-4 py-2.5 rounded-xl text-xs transition-all shadow-md flex items-center gap-2 mt-auto">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span>توزیع خودکار ۵۰/۳۰/۲۰ کتاب</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3 Pillars Summary Cards (50% Needs / 30% Wants / 20% Savings) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-surfaceDark p-5 rounded-2xl border border-cyan-500/30">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-cyan-400">۱. نیازهای ضروری (سقف استاندارد: ۵۰٪)</span>
+                            <span id="budgetGroupNeedsPct" class="text-xs font-extrabold px-2 py-0.5 rounded-lg bg-cyan-500/15 text-cyan-300">۵۰٪</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span>بودجه مصوب: <strong id="budgetGroupNeedsPlanned" class="text-white">۰</strong></span>
+                            <span>خرج واقعی: <strong id="budgetGroupNeedsActual" class="text-cyan-300">۰</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-surfaceDark p-5 rounded-2xl border border-amber-500/30">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-amber-400">۲. خواسته‌ها و کیفیت زندگی (سقف: ۳۰٪)</span>
+                            <span id="budgetGroupWantsPct" class="text-xs font-extrabold px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300">۳۰٪</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span>بودجه مصوب: <strong id="budgetGroupWantsPlanned" class="text-white">۰</strong></span>
+                            <span>خرج واقعی: <strong id="budgetGroupWantsActual" class="text-amber-300">۰</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-surfaceDark p-5 rounded-2xl border border-emerald-500/30">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-emerald-400">۳. اول به خودت پرداخت کن (حداقل: ۲۰٪)</span>
+                            <span id="budgetGroupSavingsPct" class="text-xs font-extrabold px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300">۲۰٪</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span>هدف مصوب: <strong id="budgetGroupSavingsPlanned" class="text-white">۰</strong></span>
+                            <span>انجام‌شده: <strong id="budgetGroupSavingsActual" class="text-emerald-300">۰</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Sub-category Budget Allocation & Real-Time Progress Table -->
+                <div class="bg-surfaceDark p-6 rounded-2xl border border-slate-800 shadow-lg">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-5">
+                        <h3 class="font-bold text-white text-base flex items-center gap-2">
+                            <i class="fa-solid fa-Sliders text-cyan-400"></i>
+                            <span>جدول سقف بودجه اول ماه در برابر عملکرد واقعی تا امروز</span>
+                        </h3>
+                        <span id="budgetAllocationWarning" class="text-xs text-slate-400">مجموع بودجه تخصیص‌یافته را می‌توانید به دلخواه در هر ردیف ویرایش کنید.</span>
+                    </div>
+
+                    <div id="budgetCategoriesContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <!-- Populated dynamically with interactive cards and progress bars -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================================
+                 VIEW 3: ثبت تراکنش‌ها و شکارچی «پرتی پول» (Money Leak Detector)
+                 ========================================================================= -->
+            <section id="view-leaks" class="view-panel space-y-6 hidden">
+
+                <!-- Special Module: کشف پول‌های گم‌شده (مغایرت‌گیری جیب و حساب) & Opportunity Cost -->
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+
+                    <!-- Left/Right Box 1: Unexplained Leak Detector (7 cols) -->
+                    <div class="xl:col-span-7 bg-gradient-to-br from-surfaceDark via-cardDark to-surfaceDark p-6 rounded-2xl border border-coralAccent/40 shadow-xl">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <div class="w-9 h-9 rounded-xl bg-coralAccent/20 text-coralAccent flex items-center justify-center">
+                                    <i class="fa-solid fa-user-secret text-lg"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-white text-base">ماژول ویژه «کشف پول‌های گم‌شده» (مغایرت‌گیری حساب و جیب)</h3>
+                                    <p class="text-[11px] text-slate-400">چقدر پول بدون اینکه بفهمید یا یادداشت کنید از جیب و کارت‌هایتان دود شده است؟</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+                            <div class="bg-baseBg/80 p-3.5 rounded-xl border border-slate-800">
+                                <label class="block text-xs text-slate-300 mb-1.5">۱. موجودی کل کارت‌ها و جیب در <strong>اول ماه</strong> (تومان):</label>
+                                <input type="number" id="inpInitialMonthBalance" oninput="updateReconciliation()" class="w-full bg-surfaceDark border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-cyan-500">
+                            </div>
+                            <div class="bg-baseBg/80 p-3.5 rounded-xl border border-slate-800">
+                                <label class="block text-xs text-slate-300 mb-1.5">۲. موجودی واقعی کل کارت‌ها و جیب <strong>هم‌اکنون</strong>:</label>
+                                <input type="number" id="inpActualCurrentBalance" oninput="updateReconciliation()" class="w-full bg-surfaceDark border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-amber-400 focus:outline-none focus:border-amber-500">
+                            </div>
+                        </div>
+
+                        <!-- Formula Calculation Display -->
+                        <div class="bg-baseBg/90 p-4 rounded-xl border border-slate-800/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div class="space-y-1 text-xs">
+                                <div class="text-slate-400">
+                                    <span>موجودی مورد انتظار طبق ثبت‌ها: </span>
+                                    <strong id="reconcileExpectedBalance" class="text-slate-200">۰ تومان</strong>
+                                </div>
+                                <div class="text-sm font-bold">
+                                    <span class="text-slate-300">پرتی پنهان (پول گم‌شده بدون ثبت): </span>
+                                    <span id="reconcileUnexplainedLeak" class="text-base font-black text-coralAccent">۰ تومان</span>
+                                </div>
+                            </div>
+                            <button onclick="recordUnexplainedLeakAsTransaction()" class="shrink-0 bg-coralAccent/20 hover:bg-coralAccent text-coralAccent hover:text-white border border-coralAccent/40 font-bold px-3.5 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus-circle"></i>
+                                <span>ثبت مغایرت به عنوان پرتی پنهان</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Box 2: Compound Opportunity Cost of Money Leaks (5 cols) -->
+                    <div class="xl:col-span-5 bg-surfaceDark p-6 rounded-2xl border border-amber-500/30 shadow-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-bold text-white text-base flex items-center gap-2">
+                                    <i class="fa-solid fa-hourglass-half text-amber-400"></i>
+                                    <span>هزینه فرصت پرتی‌ها (فرمول بهره مرکب)</span>
+                                </h3>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed mb-4">
+                                در کتاب «هل اول» تاکید می‌شود که هر پرتی پول، فقط همان مبلغ امروز نیست؛ بلکه دارایی بزرگی است که از آینده خود دزدیده‌اید! اگر کل پرتی‌های همین ماه (<strong id="oppCostMonthlyLeakText" class="text-coralAccent">۰ تومان</strong>) را هر ماه در یک دارایی ضدتورمی سرمایه‌گذاری کنید:
+                            </p>
+
+                            <div class="mb-3">
+                                <label class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>نرخ بازده اسمی سالانه دارایی (طلا/صندوق/سهام):</span>
+                                    <span id="lblAnnualReturnRate" class="text-amber-400 font-bold">۳۵٪ سالانه</span>
+                                </label>
+                                <input type="range" id="inpAnnualReturnRate" min="15" max="60" step="5" value="35" oninput="updateOpportunityCost()" class="w-full accent-amber-500 cursor-pointer">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2.5 pt-2">
+                            <div class="bg-cardDark/80 p-3 rounded-xl border border-slate-700/70 text-center">
+                                <span class="text-[11px] text-slate-400 block mb-1">پس از ۱ سال</span>
+                                <span id="oppCost1Year" class="text-xs sm:text-sm font-black text-emerald-400 block">۰</span>
+                            </div>
+                            <div class="bg-cardDark/80 p-3 rounded-xl border border-slate-700/70 text-center">
+                                <span class="text-[11px] text-slate-400 block mb-1">پس از ۳ سال</span>
+                                <span id="oppCost3Years" class="text-xs sm:text-sm font-black text-cyan-400 block">۰</span>
+                            </div>
+                            <div class="bg-cardDark/80 p-3 rounded-xl border border-amber-500/40 text-center">
+                                <span class="text-[11px] text-amber-300 block mb-1">پس از ۵ سال</span>
+                                <span id="oppCost5Years" class="text-xs sm:text-sm font-black text-amber-400 block">۰</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Entry Form & Transactions Table -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                    <!-- Add Transaction Form (4 cols) -->
+                    <div class="lg:col-span-4 bg-surfaceDark p-6 rounded-2xl border border-slate-800 shadow-lg h-fit">
+                        <h3 class="font-bold text-white text-base mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-pen-to-square text-cyan-400"></i>
+                            <span>ثبت تراکنش جدید (درآمد / خرج / پس‌انداز)</span>
+                        </h3>
+
+                        <form id="txForm" onsubmit="handleAddTransaction(event)" class="space-y-3.5">
+                            <div>
+                                <label class="block text-xs text-slate-300 mb-1">نوع جریان مالی</label>
+                                <select id="txType" onchange="handleTxTypeChange()" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-cyan-500">
+                                    <option value="expense">برداشت / هزینه و خرج</option>
+                                    <option value="saving">پس‌انداز و سرمایه‌گذاری (اول به خودت پرداخت کن)</option>
+                                    <option value="income">درآمد و ورودی جدید</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-slate-300 mb-1">عنوان تراکنش</label>
+                                <input type="text" id="txTitle" required placeholder="مثلاً: سفارش اسنپ‌فود بدون برنامه، خرید طلا..." class="w-full bg-baseBg border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">
+                            </div>
+
+                            <div>
+                                <label class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>مبلغ (تومان)</span>
+                                    <span id="txAmountPreview" class="text-cyan-400 font-bold">۰ تومان</span>
+                                </label>
+                                <input type="number" id="txAmount" required min="100" oninput="previewTxAmount()" placeholder="مثلاً 450000" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-cyan-500">
+                            </div>
+
+                            <div id="txCategoryWrapper">
+                                <label class="block text-xs text-slate-300 mb-1">سرفصل بودجه اول ماه</label>
+                                <select id="txCategoryId" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">
+                                    <!-- Populated from budget categories -->
+                                </select>
+                            </div>
+
+                            <div id="txNatureWrapper">
+                                <label class="block text-xs text-slate-300 mb-1">برچسب ماهیت خرج (کلید تشخیص پرتی پول)</label>
+                                <select id="txNature" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-coralAccent">
+                                    <option value="need">🟢 ضروری و حیاتی (Need)</option>
+                                    <option value="want">🟡 خواسته با برنامه قبلی (Planned Want)</option>
+                                    <option value="leak">🔴 پرتی پول / خرید هیجانی و بی‌برنامه (Money Leak)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-slate-300 mb-1">تاریخ تراکنش (شمسی)</label>
+                                <input type="text" id="txDate" required placeholder="مثلاً ۱۴۰۵/۰۸/۱۳" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">
+                            </div>
+
+                            <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black py-3 px-4 rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-check-double"></i>
+                                <span>ثبت در دفتر کل و بروزرسانی هرم</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Transactions List & Leak Filter (8 cols) -->
+                    <div class="lg:col-span-8 bg-surfaceDark p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                            <h3 class="font-bold text-white text-base flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-emerald-400"></i>
+                                <span>دفتر تراکنش‌ها و ردیاب پرتی پول</span>
+                            </h3>
+
+                            <!-- Filter Pills -->
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <button onclick="setTxFilter('all')" id="flt-all" class="tx-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 transition-all">همه</button>
+                                <button onclick="setTxFilter('leak')" id="flt-leak" class="tx-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-cardDark text-rose-300 border border-coralAccent/30 hover:bg-coralAccent/20 transition-all">فقط پرتی‌های پول 🔴</button>
+                                <button onclick="setTxFilter('expense')" id="flt-expense" class="tx-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-cardDark text-slate-300 hover:bg-slate-700 transition-all">هزینه‌ها</button>
+                                <button onclick="setTxFilter('saving')" id="flt-saving" class="tx-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-cardDark text-emerald-300 hover:bg-slate-700 transition-all">پس‌انداز و سرمایه‌گذاری</button>
+                                <button onclick="setTxFilter('income')" id="flt-income" class="tx-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-cardDark text-cyan-300 hover:bg-slate-700 transition-all">درآمدها</button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto flex-1">
+                            <table class="w-full text-right text-xs sm:text-sm">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-400 text-[11px]">
+                                        <th class="pb-3 pr-2">تاریخ</th>
+                                        <th class="pb-3 px-2">عنوان تراکنش</th>
+                                        <th class="pb-3 px-2">سرفصل بودجه</th>
+                                        <th class="pb-3 px-2">ماهیت / کیفیت</th>
+                                        <th class="pb-3 px-2">مبلغ</th>
+                                        <th class="pb-3 pl-2 text-left">حذف</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="txTableBody" class="divide-y divide-slate-800/60">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- =========================================================================
+                 VIEW 4: نمودارها و تحلیل بصری تعاملی (Chart.js)
+                 ========================================================================= -->
+            <section id="view-charts" class="view-panel space-y-6 hidden">
+                <div class="bg-surfaceDark p-6 rounded-2xl border border-slate-800 shadow-lg">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-2">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>دیدگاه تحلیلی ۳۶۰ درجه</span>
+                    </div>
+                    <h2 class="text-xl sm:text-2xl font-black text-white">نمودارهای تعاملی سلامت مالی و شبیه‌ساز ثروت</h2>
+                    <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                        تمامی نمودارهای زیر به‌صورت زنده از روی بودجه اول ماه، تراکنش‌های ثبت‌شده و پرتی‌های شناسایی‌شده شما ترسیم می‌شوند.
+                    </p>
+                </div>
+
+                <!-- 4 Interactive Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                    <!-- Chart 1: Bar Chart (Planned Budget vs Actual Spending) -->
+                    <div class="bg-surfaceDark p-5 rounded-2xl border border-slate-800 shadow-lg flex flex-col">
+                        <h3 class="font-bold text-white text-sm mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-cyan-400"></i>
+                            <span>۱. مقایسه بودجه مصوب اول ماه با خرج واقعی (به تفکیک سرفصل)</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mb-3">کدام سرفصل‌ها از سقف بودجه اول ماه عبور کرده‌اند؟</p>
+                        <div class="relative flex-1 min-h-[290px]">
+                            <canvas id="chartBudgetVsActual"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Doughnut Chart (Spending Quality Breakdown) -->
+                    <div class="bg-surfaceDark p-5 rounded-2xl border border-slate-800 shadow-lg flex flex-col">
+                        <h3 class="font-bold text-white text-sm mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-amber-400"></i>
+                            <span>۲. کالبدشکافی کیفیت خرج‌ها (ضروری، خواسته، پرتی و پس‌انداز)</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mb-3">سهم پرتی‌های ثبت‌شده و پنهان از کل جریان پول شما چقدر است؟</p>
+                        <div class="relative flex-1 min-h-[290px]">
+                            <canvas id="chartQualityDonut"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 3: Radar Chart (5 Financial Health Indicators of Hal-e Avval) -->
+                    <div class="bg-surfaceDark p-5 rounded-2xl border border-slate-800 shadow-lg flex flex-col">
+                        <h3 class="font-bold text-white text-sm mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-compass text-emerald-400"></i>
+                            <span>۳. رادار سلامت مالی بر اساس ۵ شاخص کتاب «هل اول» (از ۱۰۰ امتیاز)</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mb-3">ارزیابی همزمان نرخ پس‌انداز، صندوق اضطراری، مهار پرتی، انضباط بودجه و وضعیت بدهی</p>
+                        <div class="relative flex-1 min-h-[290px]">
+                            <canvas id="chartHealthRadar"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 4: Line Chart (12-Month Wealth Projection: Current Path vs Zero-Leak Path) -->
+                    <div class="bg-surfaceDark p-5 rounded-2xl border border-slate-800 shadow-lg flex flex-col">
+                        <h3 class="font-bold text-white text-sm mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-coralAccent"></i>
+                            <span>۴. شبیه‌ساز رشد ثروت در ۱۲ ماه آینده (مسیر فعلی در برابر حذف پرتی‌ها)</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mb-3">اگر پرتی‌های ماهانه را حذف و به سبد سرمایه‌گذاری اضافه کنید، منحنی ثروت چقدر تغییر می‌کند؟</p>
+                        <div class="relative flex-1 min-h-[290px]">
+                            <canvas id="chartWealthProjection"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- =========================================================================
+                 VIEW 5: خلاصه اصول اجرایی و چک‌لیست ماهانه کتاب «هل اول»
+                 ========================================================================= -->
+            <section id="view-checklist" class="view-panel space-y-6 hidden">
+                <div class="bg-surfaceDark p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-bold mb-2">
+                            <i class="fa-solid fa-book-bookmark"></i>
+                            <span>چک‌لیست عملیاتی و قوانین طلایی کتاب</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white">چک‌لیست عادت‌های ماهانه و خلاصه فصول «هل اول»</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                            صادق الحسینی در کتاب «هل اول» نشان می‌دهد که ثروتمند شدن نتیجه سیستم‌سازی و عادت‌های کوچک ماهانه است، نه تصمیمات هیجانی یک‌شبه.
+                        </p>
+                    </div>
+                    <div class="bg-cardDark px-4 py-3 rounded-2xl border border-slate-700 text-center shrink-0">
+                        <span class="text-[11px] text-slate-400 block">امتیاز انضباط ماهانه شما</span>
+                        <span id="checklistScoreBadge" class="text-lg font-black text-emerald-400">۰ از ۸ عادت</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Interactive Monthly Habits Checklist (6 cols) -->
+                    <div class="lg:col-span-6 bg-surfaceDark p-6 rounded-2xl border border-slate-800 shadow-lg space-y-4">
+                        <h3 class="font-bold text-white text-base flex items-center gap-2">
+                            <i class="fa-solid fa-square-check text-emerald-400"></i>
+                            <span>چک‌لیست اجرایی این ماه (با انجام هر مورد تیک بزنید)</span>
+                        </h3>
+                        <div id="habitChecklistContainer" class="space-y-2.5">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Core Book Chapters & Formulas Reference (6 cols) -->
+                    <div class="lg:col-span-6 space-y-4">
+                        <div class="bg-surfaceDark p-5 rounded-2xl border border-slate-800">
+                            <h4 class="font-bold text-cyan-400 text-sm mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-1 bg-cyan-500/20 w-6 h-6 rounded-lg flex items-center justify-center text-xs"></i>
+                                <span>فلسفه «هل اول» و قانون اینرسی مالی</span>
+                            </h4>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                همان‌طور که برای هل دادن یک خودروی خاموش، بیشترین نیرو در ثانیه‌های اول (هل اول) مصرف می‌شود و پس از به حرکت افتادن، ادامه مسیر بسیار ساده‌تر است، در مدیریت مالی نیز <strong>جمع کردن اولین صندوق اضطراری و قطع کردن نشت‌های مالی</strong> سخت‌ترین مرحله است.
+                            </p>
+                        </div>
+
+                        <div class="bg-surfaceDark p-5 rounded-2xl border border-slate-800">
+                            <h4 class="font-bold text-amber-400 text-sm mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-2 bg-amber-500/20 w-6 h-6 rounded-lg flex items-center justify-center text-xs"></i>
+                                <span>معادله معکوس پس‌انداز (اول به خودت پرداخت کن)</span>
+                            </h4>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                افراد عادی ابتدا خرج می‌کنند و اگر آخر ماه چیزی ماند پس‌انداز می‌کنند ($\text{Savings} = \text{Income} - \text{Expenses}$) که معمولاً صفر است! فرمول کتاب هل اول می‌گوید: در همان روز واریز حقوق، ابتدا سهم آینده خود (حداقل ۲۰٪) را جدا کرده و به دارایی تبدیل کنید و با مابقی زندگی کنید:
+                                <span class="block mt-1.5 font-mono text-emerald-400 bg-baseBg p-2 rounded-lg text-center" dir="ltr">Expenses = Income - Mandatory Savings (20%)</span>
+                            </p>
+                        </div>
+
+                        <div class="bg-surfaceDark p-5 rounded-2xl border border-slate-800">
+                            <h4 class="font-bold text-coralAccent text-sm mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-3 bg-coralAccent/20 w-6 h-6 rounded-lg flex items-center justify-center text-xs"></i>
+                                <span>تله «حسابداری ذهنی» و پرتی‌های ریز اما کشنده</span>
+                            </h4>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                مغز انسان خرج‌های کوچک روزانه (کافه، اسنپ‌های غیرضروری، کارمزدها، خوراکی‌های هیجانی) را به حساب نمی‌آورد. اما همین مبالغ به ظاهر ناچیز در پایان ماه ۱۵ تا ۲۵ درصد کل درآمد را می‌بلعند و مانع صعود از سطح ۲ به سطح ۳ هرم می‌شوند.
+                            </p>
+                        </div>
+
+                        <div class="bg-surfaceDark p-5 rounded-2xl border border-slate-800">
+                            <h4 class="font-bold text-emerald-400 text-sm mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-4 bg-emerald-500/20 w-6 h-6 rounded-lg flex items-center justify-center text-xs"></i>
+                                <span>سپر ضدتورمی در اقتصاد ایران</span>
+                            </h4>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                نگه داشتن ریال مازاد در حساب بانکی به معنای ذوب شدن قدرت خرید است. به محض تکمیل صندوق اضطراری (که در صندوق‌های درآمد ثابت نقدشونده نگهداری می‌شود)، هر ریال پس‌انداز ماهانه باید به دارایی‌های دارای ارزش ذاتی (طلا، سهام بنیادی، ملک) تبدیل شود.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- LEFT PANEL: Collapsible Accordion Navigation Sidebar (Placed on the Left in RTL via order-1 lg:order-2) -->
+        <aside id="leftAccordionSidebar" class="w-full lg:w-80 bg-surfaceDark border-b lg:border-b-0 lg:border-r border-slate-800/90 flex flex-col shrink-0 transition-all duration-300 ease-in-out order-1 lg:order-2 z-30">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-folder-tree text-cyan-400"></i>
+                    <span class="font-extrabold text-sm text-white">سرفصل‌ها و ماژول‌های کتاب</span>
+                </div>
+                <button onclick="toggleLeftSidebar()" class="text-slate-400 hover:text-white text-xs bg-slate-800 px-2.5 py-1 rounded-lg">
+                    <i class="fa-solid fa-angles-left"></i>
+                </button>
+            </div>
+
+            <!-- Accordion Menu Groups -->
+            <div class="flex-1 overflow-y-auto p-3.5 space-y-2.5">
+
+                <!-- Accordion Item 1: Pyramid & Ascension Formula -->
+                <div class="border border-slate-800 rounded-2xl bg-cardDark/40 overflow-hidden">
+                    <button onclick="toggleAccordionGroup('acc-1')" class="w-full p-3.5 flex items-center justify-between text-right hover:bg-slate-800/50 transition-all">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
+                                <i class="fa-solid fa-mountain"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-xs sm:text-sm text-white block">۱. هرم مالی و فرمول صعود</span>
+                                <span class="text-[10px] text-slate-400">فصل ۱ و ۲: تعیین سطح هوشمند</span>
+                            </div>
+                        </div>
+                        <i id="icon-acc-1" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200 rotate-180"></i>
+                    </button>
+                    <div id="acc-1" class="accordion-content px-3 pb-3 space-y-1.5" style="max-height: 240px;">
+                        <button onclick="openView('pyramid')" data-view-btn="pyramid" class="side-nav-btn w-full text-right px-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                            <span>نمایش هرم ۵ سطحی و نقشه صعود</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                        <div class="p-2.5 rounded-xl bg-baseBg/70 text-[11px] text-slate-400 leading-relaxed">
+                            محاسبه خودکار جایگاه شما از «بحران و نشت مالی» تا «آزادی مالی» همراه با زمان دقیق رسیدن به پله بعد.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Item 2: Monthly Budgeting (50/30/20) -->
+                <div class="border border-slate-800 rounded-2xl bg-cardDark/40 overflow-hidden">
+                    <button onclick="toggleAccordionGroup('acc-2')" class="w-full p-3.5 flex items-center justify-between text-right hover:bg-slate-800/50 transition-all">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
+                                <i class="fa-solid fa-sliders"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-xs sm:text-sm text-white block">۲. بودجه‌بندی اول ماه</span>
+                                <span class="text-[10px] text-slate-400">فصل ۳: الگوی ۵۰/۳۰/۲۰ و سقف‌گذاری</span>
+                            </div>
+                        </div>
+                        <i id="icon-acc-2" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="acc-2" class="accordion-content px-3 pb-0 space-y-1.5" style="max-height: 0px;">
+                        <button onclick="openView('budget')" data-view-btn="budget" class="side-nav-btn w-full text-right px-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between text-slate-300 hover:bg-slate-800">
+                            <span>تنظیم بودجه اول ماه و کنترل سقف‌ها</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                        <div class="p-2.5 mb-2 rounded-xl bg-baseBg/70 text-[11px] text-slate-400 leading-relaxed">
+                            تعیین سقف مجاز برای ۱۲ سرفصل زندگی در ابتدای ماه و رصد لحظه‌ای انحراف از بودجه.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Item 3: Transactions & Money Leak Hunter -->
+                <div class="border border-slate-800 rounded-2xl bg-cardDark/40 overflow-hidden">
+                    <button onclick="toggleAccordionGroup('acc-3')" class="w-full p-3.5 flex items-center justify-between text-right hover:bg-slate-800/50 transition-all">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-coralAccent/15 text-coralAccent flex items-center justify-center">
+                                <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-xs sm:text-sm text-white block">۳. ثبت خرج و شکارچی پرتی پول</span>
+                                <span class="text-[10px] text-slate-400">فصل ۴: کشف پول‌های گم‌شده</span>
+                            </div>
+                        </div>
+                        <i id="icon-acc-3" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="acc-3" class="accordion-content px-3 pb-0 space-y-1.5" style="max-height: 0px;">
+                        <button onclick="openView('leaks')" data-view-btn="leaks" class="side-nav-btn w-full text-right px-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between text-slate-300 hover:bg-slate-800">
+                            <span>ورود به ثبت تراکنش و کشف پرتی‌ها</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                        <div class="p-2.5 mb-2 rounded-xl bg-baseBg/70 text-[11px] text-slate-400 leading-relaxed">
+                            مغایرت‌گیری موجودی کارت‌ها، شکار خرج‌های هیجانی و محاسبه بهره مرکب پرتی‌ها.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Item 4: Interactive Charts -->
+                <div class="border border-slate-800 rounded-2xl bg-cardDark/40 overflow-hidden">
+                    <button onclick="toggleAccordionGroup('acc-4')" class="w-full p-3.5 flex items-center justify-between text-right hover:bg-slate-800/50 transition-all">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-xs sm:text-sm text-white block">۴. نمودارها و شبیه‌ساز ثروت</span>
+                                <span class="text-[10px] text-slate-400">فصل ۵: دید بصری و آینده‌نگری</span>
+                            </div>
+                        </div>
+                        <i id="icon-acc-4" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="acc-4" class="accordion-content px-3 pb-0 space-y-1.5" style="max-height: 0px;">
+                        <button onclick="openView('charts')" data-view-btn="charts" class="side-nav-btn w-full text-right px-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between text-slate-300 hover:bg-slate-800">
+                            <span>مشاهده ۴ نمودار تحلیلی زنده</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                        <div class="p-2.5 mb-2 rounded-xl bg-baseBg/70 text-[11px] text-slate-400 leading-relaxed">
+                            نمودار بودجه در برابر عمل، دونات کیفیت خرج، رادار سلامت مالی و شبیه‌ساز ۱۲ ماهه.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Item 5: Book Checklist & Rules -->
+                <div class="border border-slate-800 rounded-2xl bg-cardDark/40 overflow-hidden">
+                    <button onclick="toggleAccordionGroup('acc-5')" class="w-full p-3.5 flex items-center justify-between text-right hover:bg-slate-800/50 transition-all">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center">
+                                <i class="fa-solid fa-list-check"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-xs sm:text-sm text-white block">۵. چک‌لیست و قوانین «هل اول»</span>
+                                <span class="text-[10px] text-slate-400">فصل ۶: تثبیت عادت‌های ثروت‌ساز</span>
+                            </div>
+                        </div>
+                        <i id="icon-acc-5" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="acc-5" class="accordion-content px-3 pb-0 space-y-1.5" style="max-height: 0px;">
+                        <button onclick="openView('checklist')" data-view-btn="checklist" class="side-nav-btn w-full text-right px-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between text-slate-300 hover:bg-slate-800">
+                            <span>باز کردن چک‌لیست ماهانه و خلاصه کتاب</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                        <div class="p-2.5 mb-2 rounded-xl bg-baseBg/70 text-[11px] text-slate-400 leading-relaxed">
+                            ارزیابی عادت‌های ماهانه و مرور فرمول‌های کلیدی کتاب صادق الحسینی.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Sidebar Footer: Clear / Reset All Data -->
+            <div class="p-4 border-t border-slate-800 bg-baseBg/40 space-y-2">
+                <button onclick="promptClearAllData()" class="w-full bg-coralAccent/10 hover:bg-coralAccent/20 text-coralAccent border border-coralAccent/30 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>پاکسازی کامل و شروع از صفر</span>
+                </button>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // =========================================================================
+        // 1. CONSTANTS & BOOK DEFINITIONS ("هل اول" - صادق الحسینی)
+        // =========================================================================
+        const STORAGE_KEY = 'hal_e_avval_financial_suite_v2';
+
+        const PYRAMID_LEVEL_DETAILS = {
+            1: {
+                title: 'سطح ۱: بحران و نشت مالی (تراز منفی)',
+                formula: 'Cash Flow < 0 یا وجود بدهی‌های مصرفی معوق و پرتی شدید',
+                desc: 'در این سطح، هزینه‌های زندگی از درآمد ماهانه سبقت گرفته یا بخش زیادی از درآمد صرف بهره بدهی‌ها و پرتی‌های بی‌برنامه می‌شود. قانون اول کتاب در این سطح: «ایست کامل به خرج‌های هیجانی، مغایرت‌گیری فوری حساب‌ها و رساندن تراز ماهانه به نقطه سربه‌سر».',
+                color: 'text-coralAccent'
+            },
+            2: {
+                title: 'سطح ۲: بقا و کنترل جریان نقد (هل اول)',
+                formula: 'Income ≥ Expenses (تراز مثبت، اما بدون سپر اضطراری کامل)',
+                desc: 'شما وارد مرحله «هل اول» شده‌اید! دخل و خرجتان مثبت است و ثبت هزینه‌ها را شروع کرده‌اید، اما هنوز بدهی مصرفی دارید یا صندوق اضطراری ۳ تا ۶ ماهه شما تکمیل نشده است. یک اتفاق پیش‌بینی‌نشده (بیماری، خرابی خودرو یا تعدیل) می‌تواند شما را به سطح ۱ برگرداند.',
+                color: 'text-amber-400'
+            },
+            3: {
+                title: 'سطح ۳: امنیت و ثبات مالی (سپر دفاعی)',
+                formula: 'Bad Debt = 0  +  Emergency Fund ≥ (3 to 6 × Monthly Essential Expenses)',
+                desc: 'در این پله، تمام بدهی‌های بد (مصرفی) صفر شده و معادل ۳ تا ۶ ماه هزینه‌های ضروری زندگی در یک صندوق درآمد ثابت امن و نقدشونده ذخیره شده است. حالا آرامش روانی دارید و طوفان‌های اقتصادی نمی‌توانند شما را مجبور به قرض گرفتن کنند.',
+                color: 'text-cyan-400'
+            },
+            4: {
+                title: 'سطح ۴: انباشت و سرمایه‌گذاری ضدتورمی',
+                formula: 'Savings Rate ≥ 20%  +  تبدیل منظم مازاد ریالی به سبد دارایی‌های مولد',
+                desc: 'پس از تکمیل سپر امنیتی، اصل «اول به خودت پرداخت کن» با قدرت اجرا می‌شود. حداقل ۲۰٪ درآمد ماهانه در همان روز اول جدا شده و برای شکست دادن تورم به دارایی‌های دارای ارزش ذاتی (طلا، سهام بنیادی، صندوق‌ها و ملک) تبدیل می‌گردد.',
+                color: 'text-emerald-400'
+            },
+            5: {
+                title: 'سطح ۵: استقلال و آزادی مالی',
+                formula: 'Passive Income ≥ Total Monthly Expenses  (یا دارایی مولد ≥ ۲۵ برابر هزینه سالانه)',
+                desc: 'قله هرم مالی! جایی که عواید و سود دارایی‌های سرمایه‌گذاری‌شده شما، تمام هزینه‌های زندگی‌تان را پوشش می‌دهد. کار کردن در این سطح یک انتخاب است نه یک اجبار برای بقا.',
+                color: 'text-purple-400'
+            }
+        };
+
+        const DEFAULT_BUDGET_CATEGORIES = [
+            // Group 1: Needs (50% default distribution)
+            { id: 'housing', name: 'مسکن، اجاره و شارژ', group: 'need', defaultRatio: 0.22, icon: 'fa-house' },
+            { id: 'food', name: 'خوراک و اقلام سوپرمارکتی', group: 'need', defaultRatio: 0.14, icon: 'fa-basket-shopping' },
+            { id: 'utilities', name: 'قبوض، اینترنت و موبایل', group: 'need', defaultRatio: 0.04, icon: 'fa-bolt' },
+            { id: 'transport', name: 'حمل‌ونقل، سوخت و تردد', group: 'need', defaultRatio: 0.06, icon: 'fa-car' },
+            { id: 'health', name: 'سلامت، دارو و بیمه پایه', group: 'need', defaultRatio: 0.04, icon: 'fa-heart-pulse' },
+            // Group 2: Wants (30% default distribution)
+            { id: 'dining', name: 'کافه، رستوران و غذای بیرون', group: 'want', defaultRatio: 0.10, icon: 'fa-mug-hot' },
+            { id: 'shopping', name: 'پوشاک و خریدهای شخصی', group: 'want', defaultRatio: 0.08, icon: 'fa-bag-shopping' },
+            { id: 'entertainment', name: 'تفریح، سفر و اشتراک‌ها', group: 'want', defaultRatio: 0.07, icon: 'fa-film' },
+            { id: 'education', name: 'آموزش، کتاب و مهارت‌آموزی', group: 'want', defaultRatio: 0.05, icon: 'fa-graduation-cap' },
+            // Group 3: Savings & Debt Payoff (20% default distribution)
+            { id: 'emergency_save', name: 'شارژ صندوق اضطراری', group: 'saving', defaultRatio: 0.08, icon: 'fa-shield-heart' },
+            { id: 'investment', name: 'سرمایه‌گذاری ضدتورمی (طلا/صندوق)', group: 'saving', defaultRatio: 0.08, icon: 'fa-coins' },
+            { id: 'debt_payoff', name: 'تسویه اصل بدهی و اقساط', group: 'saving', defaultRatio: 0.04, icon: 'fa-credit-card' }
+        ];
+
+        const BOOK_HABIT_CHECKLIST = [
+            { id: 'h1', title: 'اجرای قانون «اول به خودت پرداخت کن» در روز اول واریز حقوق (انتقال حداقل ۲۰٪ به حساب سرمایه‌گذاری)', checked: true },
+            { id: 'h2', title: 'تفکیک کامل کارت بانکی خرج روزمره از کارت پس‌انداز و صندوق اضطراری', checked: true },
+            { id: 'h3', title: 'تعیین سقف بودجه اول ماه برای تمام سرفصل‌ها پیش از شروع خرج کردن', checked: true },
+            { id: 'h4', title: 'اجرای قانون «صبر ۴۸ ساعته» قبل از هر خرید غیرضروری یا هیجانی بالای ۵۰۰ هزار تومان', checked: false },
+            { id: 'h5', title: 'مغایرت‌گیری هفتگی موجودی کارت‌ها با هزینه‌های ثبت‌شده برای شکار پرتی‌های پنهان', checked: false },
+            { id: 'h6', title: 'بررسی و لغو اشتراک‌های دیجیتال یا خدمات تکرارشونده بلااستفاده', checked: true },
+            { id: 'h7', title: 'تبدیل مازاد ریالی به دارایی‌های ضدتورمی (صندوق طلا، درآمد ثابت یا سهام)', checked: false },
+            { id: 'h8', title: 'خرید سوپرمارکتی صرفاً با لیست از پیش نوشته‌شده و پرهیز از خرید در زمان گرسنگی یا خستگی', checked: false }
+        ];
+
+        // =========================================================================
+        // 2. SAMPLE DATA GENERATOR & STATE INITIALIZATION
+        // =========================================================================
+        function createDefaultSampleState() {
+            const plannedIncome = 40000000; // 40 Million Tomans
+            const budgets = {};
+            DEFAULT_BUDGET_CATEGORIES.forEach(cat => {
+                budgets[cat.id] = Math.round(plannedIncome * cat.defaultRatio);
+            });
+
+            return {
+                activeView: 'pyramid',
+                selectedPyramidLevelInspect: 2,
+                profile: {
+                    emergencyFund: 38000000,    // 38M saved in emergency fund
+                    badDebt: 4000000,           // 4M remaining consumer debt
+                    investedAssets: 95000000,   // 95M in gold/funds
+                    emergencyTargetMonths: 3,   // 3 months target
+                    passiveIncome: 2200000,     // 2.2M passive return
+                    plannedMonthlyIncome: plannedIncome,
+                    initialMonthBalance: 12000000,
+                    actualCurrentBalance: 18150000, // Leaves a realistic unexplained leak of ~1,250,000 Toman!
+                    annualReturnRate: 35
+                },
+                budgets: budgets,
+                transactions: [
+                    { id: 101, title: 'واریز حقوق و مزایای ماهانه', amount: 36000000, type: 'income', categoryId: 'housing', nature: 'need', date: '۱۴۰۵/۰۸/۰۱' },
+                    { id: 102, title: 'پاداش پروژه جانبی', amount: 4000000, type: 'income', categoryId: 'housing', nature: 'need', date: '۱۴۰۵/۰۸/۰۵' },
+                    { id: 103, title: 'خرید واحد صندوق طلا (اول به خودت پرداخت کن)', amount: 4000000, type: 'saving', categoryId: 'investment', nature: 'saving', date: '۱۴۰۵/۰۸/۰۲' },
+                    { id: 104, title: 'افزایش موجودی صندوق اضطراری', amount: 3000000, type: 'saving', categoryId: 'emergency_save', nature: 'saving', date: '۱۴۰۵/۰۸/۰۲' },
+                    { id: 105, title: 'پرداخت اجاره و شارژ ساختمان', amount: 8800000, type: 'expense', categoryId: 'housing', nature: 'need', date: '۱۴۰۵/۰۸/۰۳' },
+                    { id: 106, title: 'خرید کلی اقلام سوپرمارکت و پروتئین', amount: 4900000, type: 'expense', categoryId: 'food', nature: 'need', date: '۱۴۰۵/۰۸/۰۴' },
+                    { id: 107, title: 'تسویه بخشی از بدهی کارت اعتباری', amount: 1600000, type: 'saving', categoryId: 'debt_payoff', nature: 'saving', date: '۱۴۰۵/۰۸/۰۶' },
+                    { id: 108, title: 'سفارش‌های مکرر اسنپ‌فود و کافه بدون برنامه', amount: 2450000, type: 'expense', categoryId: 'dining', nature: 'leak', date: '۱۴۰۵/۰۸/۰۸' },
+                    { id: 109, title: 'خرید هیجانی اکسسوری و لباس در حراج آنلاین', amount: 1950000, type: 'expense', categoryId: 'shopping', nature: 'leak', date: '۱۴۰۵/۰۸/۱۰' },
+                    { id: 110, title: 'بنزین، سرویس و تردد شهری', amount: 1850000, type: 'expense', categoryId: 'transport', nature: 'need', date: '۱۴۰۵/۰۸/۱۱' },
+                    { id: 111, title: 'قبض برق، گاز و بسته اینترنت یک‌ماهه', amount: 950000, type: 'expense', categoryId: 'utilities', nature: 'need', date: '۱۴۰۵/۰۸/۱۲' },
+                    { id: 112, title: 'خرید کتاب تخصصی و دوره آموزشی', amount: 1100000, type: 'expense', categoryId: 'education', nature: 'want', date: '۱۴۰۵/۰۸/۱۲' },
+                    { id: 113, title: 'تمدید خودکار اشتراک‌های بلااستفاده و خوراکی‌های ریز', amount: 800000, type: 'expense', categoryId: 'entertainment', nature: 'leak', date: '۱۴۰۵/۰۸/۱۳' }
+                ],
+                checklist: JSON.parse(JSON.stringify(BOOK_HABIT_CHECKLIST))
+            };
+        }
+
+        function createEmptyState() {
+            const emptyBudgets = {};
+            DEFAULT_BUDGET_CATEGORIES.forEach(category => emptyBudgets[category.id] = 0);
+
+            return {
+                activeView: 'pyramid',
+                selectedPyramidLevelInspect: 1,
+                profile: {
+                    emergencyFund: 0,
+                    badDebt: 0,
+                    investedAssets: 0,
+                    emergencyTargetMonths: 3,
+                    passiveIncome: 0,
+                    plannedMonthlyIncome: 0,
+                    initialMonthBalance: 0,
+                    actualCurrentBalance: 0,
+                    annualReturnRate: 35
+                },
+                budgets: emptyBudgets,
+                transactions: [],
+                checklist: JSON.parse(JSON.stringify(BOOK_HABIT_CHECKLIST)).map(item => ({ ...item, checked: false }))
+            };
+        }
+
+        let appState = loadStateFromStorage();
+        let currentTxFilter = 'all';
+        let chartInstances = {
+            budgetVsActual: null,
+            qualityDonut: null,
+            healthRadar: null,
+            wealthProjection: null
+        };
+
+        function loadStateFromStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.profile && parsed.budgets && Array.isArray(parsed.transactions)) {
+                        return parsed;
+                    }
+                }
+            } catch (e) {
+                console.error('Error reading state from localStorage:', e);
+            }
+            return createEmptyState();
+        }
+
+        function saveStateToStorage(quiet = false) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                const statusEl = document.getElementById('saveStatusText');
+                if (statusEl) {
+                    const nowTime = new Intl.DateTimeFormat('fa-IR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date());
+                    statusEl.textContent = `ذخیره شد (${nowTime})`;
+                }
+            } catch (e) {
+                console.error('Error saving state:', e);
+            }
+        }
+
+        // =========================================================================
+        // 3. FORMATTING & UTILITY HELPERS
+        // =========================================================================
+        function toPersianDigits(val) {
+            if (val === null || val === undefined) return '';
+            return String(val).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+        }
+
+        function formatToman(amount, includeUnit = true) {
+            const num = Math.round(Number(amount) || 0);
+            const formatted = num.toLocaleString('fa-IR');
+            return includeUnit ? `${formatted} تومان` : formatted;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character]);
+        }
+
+        function getTodayJalaliShort() {
+            try {
+                return new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+            } catch (e) {
+                return '۱۴۰۵/۰۸/۱۳';
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-950/95 border-emerald-500/50 text-emerald-200',
+                warning: 'bg-amber-950/95 border-amber-500/50 text-amber-200',
+                danger: 'bg-rose-950/95 border-coralAccent/50 text-rose-200',
+                info: 'bg-cyan-950/95 border-cyan-500/50 text-cyan-200'
+            };
+            const icons = {
+                success: 'fa-circle-check text-emerald-400',
+                warning: 'fa-triangle-exclamation text-amber-400',
+                danger: 'fa-circle-xmark text-coralAccent',
+                info: 'fa-circle-info text-cyan-400'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-2xl text-xs font-bold transition-all duration-300 ${colors[type] || colors.info}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type] || icons.info} text-base"></i>
+                <span class="flex-1 leading-relaxed">${message}</span>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(8px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3400);
+        }
+
+        let pendingConfirmAction = null;
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirmModalTitle').textContent = title;
+            document.getElementById('confirmModalMessage').textContent = message;
+            pendingConfirmAction = onConfirm;
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            pendingConfirmAction = null;
+        }
+
+        document.getElementById('confirmModalActionBtn').addEventListener('click', () => {
+            if (typeof pendingConfirmAction === 'function') {
+                pendingConfirmAction();
+            }
+            closeConfirmModal();
+        });
+
+        // =========================================================================
+        // 4. LIVE JALALI CLOCK & NAVIGATION / ACCORDION LOGIC
+        // =========================================================================
+        function startLiveClock() {
+            const updateTime = () => {
+                const now = new Date();
+                const dateStr = new Intl.DateTimeFormat('fa-IR', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                }).format(now);
+                const timeStr = new Intl.DateTimeFormat('fa-IR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }).format(now);
+
+                document.getElementById('liveShamsiDate').textContent = dateStr;
+                document.getElementById('liveClock').textContent = timeStr;
+            };
+            updateTime();
+            setInterval(updateTime, 1000);
+        }
+
+        function toggleAccordionGroup(accId) {
+            const allGroups = ['acc-1', 'acc-2', 'acc-3', 'acc-4', 'acc-5'];
+            allGroups.forEach(id => {
+                const contentEl = document.getElementById(id);
+                const iconEl = document.getElementById(`icon-${id}`);
+                if (id === accId) {
+                    const isOpen = contentEl.style.maxHeight && contentEl.style.maxHeight !== '0px';
+                    if (isOpen) {
+                        contentEl.style.maxHeight = '0px';
+                        contentEl.classList.remove('pb-3');
+                        iconEl.classList.remove('rotate-180');
+                    } else {
+                        contentEl.style.maxHeight = '240px';
+                        contentEl.classList.add('pb-3');
+                        iconEl.classList.add('rotate-180');
+                    }
+                } else {
+                    contentEl.style.maxHeight = '0px';
+                    contentEl.classList.remove('pb-3');
+                    iconEl.classList.remove('rotate-180');
+                }
+            });
+        }
+
+        function openView(viewName) {
+            appState.activeView = viewName;
+            saveStateToStorage(true);
+
+            // Hide all right-panel views and show ONLY the selected view
+            const views = ['pyramid', 'budget', 'leaks', 'charts', 'checklist'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) {
+                    if (v === viewName) {
+                        el.classList.remove('hidden');
+                    } else {
+                        el.classList.add('hidden');
+                    }
+                }
+            });
+
+            // Highlight active button in the left accordion menu
+            document.querySelectorAll('.side-nav-btn').forEach(btn => {
+                const target = btn.getAttribute('data-view-btn');
+                if (target === viewName) {
+                    btn.className = 'side-nav-btn w-full text-right px-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between bg-cyan-500/15 text-cyan-300 border border-cyan-500/30';
+                } else {
+                    btn.className = 'side-nav-btn w-full text-right px-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between text-slate-300 hover:bg-slate-800';
+                }
+            });
+
+            // Automatically open the corresponding accordion group
+            const viewToAccMap = {
+                pyramid: 'acc-1',
+                budget: 'acc-2',
+                leaks: 'acc-3',
+                charts: 'acc-4',
+                checklist: 'acc-5'
+            };
+            const targetAcc = viewToAccMap[viewName];
+            if (targetAcc) {
+                const contentEl = document.getElementById(targetAcc);
+                const iconEl = document.getElementById(`icon-${targetAcc}`);
+                if (contentEl && (!contentEl.style.maxHeight || contentEl.style.maxHeight === '0px')) {
+                    toggleAccordionGroup(targetAcc);
+                }
+            }
+
+            if (viewName === 'charts') {
+                setTimeout(renderAllCharts, 60);
+            }
+        }
+
+        function toggleLeftSidebar() {
+            const sidebar = document.getElementById('leftAccordionSidebar');
+            sidebar.classList.toggle('hidden');
+            if (appState.activeView === 'charts') {
+                setTimeout(renderAllCharts, 310);
+            }
+        }
+
+        // =========================================================================
+        // 5. CORE FINANCIAL ENGINE & METRICS CALCULATION
+        // =========================================================================
+        function computeFinancialMetrics() {
+            let totalIncome = 0;
+            let totalExpenses = 0; // pure consumptive expenses (type === 'expense')
+            let totalSavingsTx = 0; // explicit pay-yourself-first transactions (type === 'saving')
+
+            let essentialExpenses = 0;
+            let plannedWantsExpenses = 0;
+            let recordedLeaks = 0;
+
+            const actualByCategory = {};
+            DEFAULT_BUDGET_CATEGORIES.forEach(c => actualByCategory[c.id] = 0);
+
+            appState.transactions.forEach(tx => {
+                const amt = Number(tx.amount) || 0;
+                if (tx.type === 'income') {
+                    totalIncome += amt;
+                } else if (tx.type === 'saving') {
+                    totalSavingsTx += amt;
+                    if (actualByCategory[tx.categoryId] !== undefined) {
+                        actualByCategory[tx.categoryId] += amt;
+                    }
+                } else {
+                    // expense
+                    totalExpenses += amt;
+                    if (actualByCategory[tx.categoryId] !== undefined) {
+                        actualByCategory[tx.categoryId] += amt;
+                    }
+                    if (tx.nature === 'leak') {
+                        recordedLeaks += amt;
+                    } else if (tx.nature === 'want') {
+                        plannedWantsExpenses += amt;
+                    } else {
+                        essentialExpenses += amt;
+                    }
+                }
+            });
+
+            // Pocket & Card Reconciliation (Unexplained Leak formula)
+            const initBal = Number(appState.profile.initialMonthBalance) || 0;
+            const actualBal = Number(appState.profile.actualCurrentBalance) || 0;
+            const totalRecordedOutflows = totalExpenses + totalSavingsTx;
+            const expectedCurrentBalance = initBal + totalIncome - totalRecordedOutflows;
+            const rawDiff = expectedCurrentBalance - actualBal;
+            const unexplainedLeak = rawDiff > 0 ? rawDiff : 0;
+
+            const totalLeaks = recordedLeaks + unexplainedLeak;
+            const effectiveExpenses = totalExpenses + unexplainedLeak;
+            const freeCashFlow = totalIncome - effectiveExpenses; // Total savings capacity (including explicit saving txs + unspent cash)
+            const effectiveSavings = Math.max(0, freeCashFlow);
+            const savingsRate = totalIncome > 0 ? (freeCashFlow / totalIncome) * 100 : 0;
+
+            // Planned Needs baseline (if essentialExpenses is still low early in month, use max of actual essentialExpenses or 50% of planned Needs budget)
+            let plannedNeedsBudget = 0;
+            DEFAULT_BUDGET_CATEGORIES.filter(c => c.group === 'need').forEach(c => {
+                plannedNeedsBudget += (Number(appState.budgets[c.id]) || 0);
+            });
+            const monthlyEssentialBaseline = Math.max(essentialExpenses, plannedNeedsBudget, 5000000);
+            const targetMonths = Number(appState.profile.emergencyTargetMonths) || 3;
+            const requiredEmergencyFund = monthlyEssentialBaseline * targetMonths;
+
+            const currentEmergencyFund = Number(appState.profile.emergencyFund) || 0;
+            const badDebt = Number(appState.profile.badDebt) || 0;
+            const investedAssets = Number(appState.profile.investedAssets) || 0;
+            const passiveIncome = Number(appState.profile.passiveIncome) || 0;
+
+            const totalLivingCostBaseline = Math.max(effectiveExpenses, plannedNeedsBudget * 1.4, 10000000);
+            const requiredFreedomAssets = totalLivingCostBaseline * 12 * 25; // 25x Annual Expenses rule
+
+            // Determine Current Pyramid Level (1 to 5)
+            let currentLevel = 1;
+            if (freeCashFlow < 0) {
+                currentLevel = 1;
+            } else {
+                currentLevel = 2; // Positive cashflow achieved
+                if (badDebt <= 0 && currentEmergencyFund >= requiredEmergencyFund) {
+                    currentLevel = 3; // Emergency shield complete & zero bad debt
+                    if (savingsRate >= 20 && investedAssets > 0) {
+                        currentLevel = 4; // Anti-inflation asset accumulation active
+                        if (passiveIncome >= totalLivingCostBaseline || investedAssets >= requiredFreedomAssets) {
+                            currentLevel = 5; // Financial Independence
+                        }
+                    }
+                }
+            }
+
+            return {
+                totalIncome,
+                totalExpenses,
+                totalSavingsTx,
+                essentialExpenses,
+                plannedWantsExpenses,
+                recordedLeaks,
+                unexplainedLeak,
+                totalLeaks,
+                effectiveExpenses,
+                freeCashFlow,
+                effectiveSavings,
+                savingsRate,
+                expectedCurrentBalance,
+                actualByCategory,
+                monthlyEssentialBaseline,
+                requiredEmergencyFund,
+                currentEmergencyFund,
+                badDebt,
+                investedAssets,
+                passiveIncome,
+                totalLivingCostBaseline,
+                requiredFreedomAssets,
+                currentLevel
+            };
+        }
+
+        // =========================================================================
+        // 6. UI RENDERERS FOR ALL MODULES
+        // =========================================================================
+        function renderAll() {
+            const metrics = computeFinancialMetrics();
+
+            // 1. Update Top KPI Strip & Header Badge
+            document.getElementById('kpiMonthlyIncome').textContent = formatToman(metrics.totalIncome);
+            document.getElementById('kpiMonthlyExpense').textContent = formatToman(metrics.totalExpenses);
+            document.getElementById('kpiTotalLeaks').textContent = formatToman(metrics.totalLeaks);
+            document.getElementById('kpiNetCashflow').textContent = formatToman(metrics.freeCashFlow);
+            document.getElementById('kpiNetCashflow').className = `text-sm sm:text-base font-extrabold mt-0.5 block ${metrics.freeCashFlow >= 0 ? 'text-cyan-400' : 'text-coralAccent'}`;
+            document.getElementById('kpiSavingsRate').textContent = `${toPersianDigits(Math.round(metrics.savingsRate))}٪`;
+            document.getElementById('headerLevelBadge').textContent = `سطح ${toPersianDigits(metrics.currentLevel)} هرم مالی`;
+
+            // 2. Render Module 1: Pyramid & Formula Box
+            renderPyramidModule(metrics);
+
+            // 3. Render Module 2: Monthly Budgeting (50/30/20)
+            renderBudgetModule(metrics);
+
+            // 4. Render Module 3: Transactions, Reconciliation & Opportunity Cost
+            renderLeaksAndTransactionsModule(metrics);
+
+            // 5. Render Module 5: Habit Checklist
+            renderChecklistModule();
+
+            // 6. Render Charts if active
+            if (appState.activeView === 'charts') {
+                renderAllCharts();
+            }
+        }
+
+        function renderPyramidModule(m) {
+            // Sync inputs with state
+            const setValIfNotFocused = (id, val) => {
+                const el = document.getElementById(id);
+                if (el && document.activeElement !== el) {
+                    el.value = val;
+                }
+            };
+            setValIfNotFocused('inpEmergencyFund', appState.profile.emergencyFund);
+            setValIfNotFocused('inpBadDebt', appState.profile.badDebt);
+            setValIfNotFocused('inpInvestedAssets', appState.profile.investedAssets);
+            setValIfNotFocused('inpEmergencyMonths', appState.profile.emergencyTargetMonths);
+            setValIfNotFocused('inpPassiveIncome', appState.profile.passiveIncome);
+
+            document.getElementById('lblEmergencyFund').textContent = formatToman(appState.profile.emergencyFund);
+            document.getElementById('lblBadDebt').textContent = formatToman(appState.profile.badDebt);
+            document.getElementById('lblInvestedAssets').textContent = formatToman(appState.profile.investedAssets);
+
+            // Highlight Current Level on the 5-step Pyramid
+            for (let lvl = 1; lvl <= 5; lvl++) {
+                const card = document.getElementById(`pyrCard-${lvl}`);
+                const badge = document.getElementById(`pyrBadge-${lvl}`);
+                const widthClasses = {
+                    5: 'w-full sm:w-8/12',
+                    4: 'w-full sm:w-9/12',
+                    3: 'w-full sm:w-10/12',
+                    2: 'w-full sm:w-11/12',
+                    1: 'w-full'
+                }[lvl];
+
+                if (lvl === m.currentLevel) {
+                    card.className = `pyramid-step cursor-pointer ${widthClasses} p-4 rounded-2xl border-2 border-cyan-400 bg-gradient-to-l from-cyan-500/20 via-cardDark to-emerald-500/15 flex items-center justify-between gap-3 shadow-lg shadow-cyan-500/10`;
+                    badge.classList.remove('hidden');
+                } else {
+                    card.className = `pyramid-step cursor-pointer ${widthClasses} p-3.5 rounded-2xl border border-slate-700/70 bg-cardDark/60 hover:border-slate-500 flex items-center justify-between gap-3 opacity-85 hover:opacity-100`;
+                    badge.classList.add('hidden');
+                }
+            }
+
+            // Render Selected Level Info Box
+            const info = PYRAMID_LEVEL_DETAILS[appState.selectedPyramidLevelInspect || m.currentLevel];
+            document.getElementById('selectedLevelDetailBox').innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                    <strong class="text-sm ${info.color}">${info.title}</strong>
+                    <span class="font-mono text-[11px] bg-surfaceDark px-2.5 py-1 rounded-lg border border-slate-700 text-slate-300" dir="ltr">${info.formula}</span>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed">${info.desc}</p>
+            `;
+
+            // Render Next Level Ascension Formula Box
+            document.getElementById('formulaCurrentLevelTag').textContent = `جایگاه فعلی: سطح ${toPersianDigits(m.currentLevel)}`;
+            const formulaBox = document.getElementById('nextLevelFormulaContent');
+            let progressPct = 0;
+
+            const optimizedMonthlyCashFlow = Math.max(0, m.freeCashFlow) + m.totalLeaks;
+
+            if (m.currentLevel === 1) {
+                const deficit = Math.abs(m.freeCashFlow);
+                progressPct = m.totalIncome > 0 ? Math.max(10, Math.min(95, Math.round((m.totalIncome / (m.totalIncome + deficit)) * 100))) : 15;
+                formulaBox.innerHTML = `
+                    <p class="font-bold text-coralAccent">⚠️ هشدار سطح ۱: تراز نقدینگی این ماه شما <span class="underline">${formatToman(deficit)}</span> منفی است!</p>
+                    <p>برای صعود از <strong>سطح ۱ به سطح ۲ (بقا و کنترل جریان نقد)</strong>، باید حداقل <strong class="text-white">${formatToman(deficit)}</strong> از هزینه‌های این ماه کم کنید یا به درآمدتان اضافه نمایید.</p>
+                    <div class="p-3 rounded-xl bg-baseBg/90 border border-slate-800 text-xs space-y-1">
+                        <div>💡 <strong>کلید طلایی کتاب:</strong> شما در همین ماه <strong class="text-coralAccent">${formatToman(m.totalLeaks)}</strong> پرتی پول (ثبت‌شده + پنهان) داشته‌اید.</div>
+                        <div>${m.totalLeaks >= deficit ? '✅ فقط با بستن همین پرتی‌های پول، بلافاصله در همین ماه تراز شما مثبت شده و به <strong>سطح ۲</strong> صعود می‌کنید!' : 'با حذف کامل پرتی‌ها، بخش بزرگی از کسری بودجه شما فوراً جبران می‌شود.'}</div>
+                    </div>
+                `;
+            } else if (m.currentLevel === 2) {
+                const emergencyGap = Math.max(0, m.requiredEmergencyFund - m.currentEmergencyFund);
+                const debtGap = Math.max(0, m.badDebt);
+                const totalGapToLevel3 = emergencyGap + debtGap;
+                const totalTargetLevel3 = m.requiredEmergencyFund + debtGap;
+                progressPct = totalTargetLevel3 > 0 ? Math.min(99, Math.round(((totalTargetLevel3 - totalGapToLevel3) / totalTargetLevel3) * 100)) : 50;
+
+                const monthsCurrentPace = m.freeCashFlow > 0 ? (totalGapToLevel3 / m.freeCashFlow).toFixed(1) : '∞';
+                const monthsZeroLeakPace = optimizedMonthlyCashFlow > 0 ? (totalGapToLevel3 / optimizedMonthlyCashFlow).toFixed(1) : '∞';
+
+                formulaBox.innerHTML = `
+                    <p>برای صعود از <strong>سطح ۲ به سطح ۳ (امنیت و ثبات مالی)</strong>، طبق فرمول کتاب به موارد زیر نیاز دارید:</p>
+                    <ul class="space-y-1.5 pr-4 list-disc text-xs text-slate-300">
+                        <li>تکمیل صندوق اضطراری (${toPersianDigits(appState.profile.emergencyTargetMonths)} ماه هزینه ضروری = <strong>${formatToman(m.requiredEmergencyFund)}</strong>): کسری فعلی شما <strong class="text-cyan-400">${formatToman(emergencyGap)}</strong> است.</li>
+                        <li>تسویه کامل بدهی‌های بد مصرفی: مانده بدهی فعلی شما <strong class="text-coralAccent">${formatToman(debtGap)}</strong> است.</li>
+                    </ul>
+                    <div class="p-3.5 rounded-xl bg-baseBg/95 border border-cyan-500/30 text-xs space-y-1.5">
+                        <div>🎯 <strong>مجموع مبلغ مورد نیاز برای صعود به سطح ۳:</strong> <span class="text-amber-400 font-black">${formatToman(totalGapToLevel3)}</span></div>
+                        <div>⏳ <strong>با جریان نقد آزاد فعلی (${formatToman(m.freeCashFlow)} در ماه):</strong> صعود در <strong class="text-white">${toPersianDigits(monthsCurrentPace)} ماه</strong></div>
+                        <div class="text-emerald-400 font-bold">🚀 اگر پرتی‌های پول این ماه (${formatToman(m.totalLeaks)}) را به صفر برسانید: صعود فقط در <strong class="underline">${toPersianDigits(monthsZeroLeakPace)} ماه</strong> محقق می‌شود!</div>
+                    </div>
+                `;
+            } else if (m.currentLevel === 3) {
+                const targetSavingsAmount = Math.round(m.totalIncome * 0.20);
+                const savingsShortfall = Math.max(0, targetSavingsAmount - m.freeCashFlow);
+                progressPct = targetSavingsAmount > 0 ? Math.min(99, Math.round((m.freeCashFlow / targetSavingsAmount) * 100)) : 75;
+
+                formulaBox.innerHTML = `
+                    <p class="text-emerald-400 font-bold">👏 تبریک! سپر دفاعی شما کامل است و بدهی بد ندارید.</p>
+                    <p>برای صعود از <strong>سطح ۳ به سطح ۴ (انباشت و سرمایه‌گذاری ضدتورمی)</strong>، نرخ پس‌انداز و سرمایه‌گذاری ماهانه شما باید حداقل به <strong>۲۰٪ درآمد (${formatToman(targetSavingsAmount)})</strong> برسد.</p>
+                    <div class="p-3.5 rounded-xl bg-baseBg/95 border border-emerald-500/30 text-xs space-y-1.5">
+                        <div>📊 <strong>نرخ پس‌انداز فعلی شما:</strong> <span class="text-amber-400 font-bold">${toPersianDigits(m.savingsRate.toFixed(1))}٪</span> (کسری ماهانه تا ۲۰٪: <strong class="text-coralAccent">${formatToman(savingsShortfall)}</strong>)</div>
+                        <div class="text-cyan-300">💡 شما در این ماه <strong>${formatToman(m.totalLeaks)}</strong> پرتی پول داشته‌اید. با تبدیل همین پرتی‌ها به خرید دارایی مولد، بلافاصله وارد <strong>سطح ۴ هرم</strong> می‌شوید!</div>
+                    </div>
+                `;
+            } else if (m.currentLevel === 4) {
+                const assetGap = Math.max(0, m.requiredFreedomAssets - m.investedAssets);
+                progressPct = m.requiredFreedomAssets > 0 ? Math.min(99, Math.round((m.investedAssets / m.requiredFreedomAssets) * 100)) : 80;
+                const passiveGap = Math.max(0, m.totalLivingCostBaseline - m.passiveIncome);
+
+                formulaBox.innerHTML = `
+                    <p class="text-emerald-400 font-bold">🌟 شما در سطح ۴ (سرمایه‌گذاری ضدتورمی پایدار) قرار دارید!</p>
+                    <p>برای صعود به <strong>سطح ۵ (قله استقلال و آزادی مالی)</strong>، درآمد غیرفعال ماهانه شما باید کل هزینه‌های زندگی (${formatToman(m.totalLivingCostBaseline)}) را پوشش دهد.</p>
+                    <div class="p-3.5 rounded-xl bg-baseBg/95 border border-purple-500/30 text-xs space-y-1.5">
+                        <div>🏛️ <strong>سقف سرمایه لازم طبق فرمول ۲۵ برابر هزینه سالانه:</strong> <span class="text-purple-300 font-bold">${formatToman(m.requiredFreedomAssets)}</span></div>
+                        <div>📈 <strong>فاصله درآمد غیرفعال فعلی با هزینه‌های ماهانه:</strong> <span class="text-amber-400 font-bold">${formatToman(passiveGap)} در ماه</span></div>
+                        <div>با حفظ نرخ پس‌انداز ${toPersianDigits(Math.round(m.savingsRate))}٪ و حذف پرتی‌های باقی‌مانده (${formatToman(m.totalLeaks)})، سرعت مرکب شدن سبد دارایی شما به حداکثر می‌رسد.</div>
+                    </div>
+                `;
+            } else {
+                progressPct = 100;
+                formulaBox.innerHTML = `
+                    <p class="text-purple-400 font-black text-base">👑 تبریک! شما در سطح ۵ (قله استقلال و آزادی مالی) قرار دارید.</p>
+                    <p class="text-xs text-slate-300">عواید دارایی‌های مولد شما هزینه‌های زندگی‌تان را پوشش می‌دهد. استراتژی کتاب در این سطح: «حفظ توازن سبد دارایی‌ها، مدیریت ریسک و لذت بردن هوشمندانه از ثروت بدون بازگشت به تله تورم سبک زندگی».</p>
+                `;
+            }
+
+            document.getElementById('nextLevelProgressPct').textContent = `${toPersianDigits(progressPct)}٪`;
+            document.getElementById('nextLevelProgressBar').style.width = `${progressPct}%`;
+        }
+
+        function selectPyramidLevelInfo(lvl) {
+            appState.selectedPyramidLevelInspect = lvl;
+            renderPyramidModule(computeFinancialMetrics());
+        }
+
+        function updateProfileInputs() {
+            appState.profile.emergencyFund = Math.max(0, Number(document.getElementById('inpEmergencyFund').value) || 0);
+            appState.profile.badDebt = Math.max(0, Number(document.getElementById('inpBadDebt').value) || 0);
+            appState.profile.investedAssets = Math.max(0, Number(document.getElementById('inpInvestedAssets').value) || 0);
+            appState.profile.emergencyTargetMonths = Number(document.getElementById('inpEmergencyMonths').value) || 3;
+            appState.profile.passiveIncome = Math.max(0, Number(document.getElementById('inpPassiveIncome').value) || 0);
+            saveStateToStorage();
+            renderAll();
+        }
+
+        // =========================================================================
+        // 7. MODULE 2: MONTHLY BUDGETING (50/30/20 RULE)
+        // =========================================================================
+        function renderBudgetModule(m) {
+            const plannedIncomeInput = document.getElementById('inpPlannedIncome');
+            if (plannedIncomeInput && document.activeElement !== plannedIncomeInput) {
+                plannedIncomeInput.value = appState.profile.plannedMonthlyIncome;
+            }
+
+            const plannedInc = Number(appState.profile.plannedMonthlyIncome) || 1;
+            let sumNeedsPlanned = 0, sumNeedsActual = 0;
+            let sumWantsPlanned = 0, sumWantsActual = 0;
+            let sumSavingsPlanned = 0, sumSavingsActual = 0;
+
+            const container = document.getElementById('budgetCategoriesContainer');
+            container.innerHTML = '';
+
+            DEFAULT_BUDGET_CATEGORIES.forEach(cat => {
+                const planned = Number(appState.budgets[cat.id]) || 0;
+                const actual = Number(m.actualByCategory[cat.id]) || 0;
+                const pctUsed = planned > 0 ? Math.round((actual / planned) * 100) : (actual > 0 ? 100 : 0);
+
+                if (cat.group === 'need') {
+                    sumNeedsPlanned += planned;
+                    sumNeedsActual += actual;
+                } else if (cat.group === 'want') {
+                    sumWantsPlanned += planned;
+                    sumWantsActual += actual;
+                } else {
+                    sumSavingsPlanned += planned;
+                    sumSavingsActual += actual;
+                }
+
+                // Color logic based on requirement: Green < 75%, Yellow 75-100%, Red > 100%
+                // Note: for 'saving' group, reaching 100% is positive, whereas for 'need'/'want' exceeding 100% is a budget leak!
+                let barColor = 'bg-emerald-500';
+                let badgeClass = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+                let statusLabel = 'ایمن';
+
+                if (cat.group === 'saving') {
+                    if (pctUsed >= 100) {
+                        barColor = 'bg-emerald-400';
+                        badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                        statusLabel = 'هدف محقق شد ✅';
+                    } else if (pctUsed >= 50) {
+                        barColor = 'bg-cyan-400';
+                        badgeClass = 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
+                        statusLabel = 'در مسیر هدف';
+                    } else {
+                        barColor = 'bg-amber-400';
+                        badgeClass = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+                        statusLabel = 'نیاز به شارژ';
+                    }
+                } else {
+                    if (pctUsed > 100) {
+                        barColor = 'bg-coralAccent';
+                        badgeClass = 'bg-coralAccent/20 text-rose-300 border-coralAccent/40';
+                        statusLabel = 'عبور از سقف! 🚨';
+                    } else if (pctUsed >= 75) {
+                        barColor = 'bg-amber-400';
+                        badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+                        statusLabel = 'نزدیک سقف ⚠️';
+                    }
+                }
+
+                const groupBadge = {
+                    need: '<span class="text-[10px] text-cyan-400">ضروری (۵۰٪)</span>',
+                    want: '<span class="text-[10px] text-amber-400">خواسته (۳۰٪)</span>',
+                    saving: '<span class="text-[10px] text-emerald-400">پس‌انداز (۲۰٪)</span>'
+                }[cat.group];
+
+                const card = document.createElement('div');
+                card.className = 'bg-cardDark/70 p-4 rounded-2xl border border-slate-700/80 flex flex-col justify-between gap-3';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl bg-slate-800 text-slate-200 flex items-center justify-center text-xs">
+                                    <i class="fa-solid ${cat.icon}"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-xs text-white">${cat.name}</h4>
+                                    ${groupBadge}
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border ${badgeClass}">
+                                ${toPersianDigits(pctUsed)}٪ (${statusLabel})
+                            </span>
+                        </div>
+
+                        <div class="mt-2">
+                            <label class="block text-[10px] text-slate-400 mb-1">سقف بودجه مصوب اول ماه (تومان):</label>
+                            <input type="number" value="${planned}" onchange="updateCategoryBudget('${cat.id}', this.value)" class="w-full bg-baseBg border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-cyan-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-[11px] mb-1">
+                            <span class="text-slate-400">عملکرد واقعی تا امروز: <strong class="text-slate-200">${formatToman(actual, false)}</strong></span>
+                            <span class="text-slate-400">مانده: <strong class="${planned - actual >= 0 ? 'text-emerald-400' : 'text-coralAccent'}">${formatToman(planned - actual, false)}</strong></span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full ${barColor} transition-all duration-300" style="width: ${Math.min(100, pctUsed)}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            // Update 3 Group Summary Cards
+            document.getElementById('budgetGroupNeedsPct').textContent = `${toPersianDigits(Math.round((sumNeedsPlanned / plannedInc) * 100))}٪ درآمد`;
+            document.getElementById('budgetGroupNeedsPlanned').textContent = formatToman(sumNeedsPlanned);
+            document.getElementById('budgetGroupNeedsActual').textContent = formatToman(sumNeedsActual);
+
+            document.getElementById('budgetGroupWantsPct').textContent = `${toPersianDigits(Math.round((sumWantsPlanned / plannedInc) * 100))}٪ درآمد`;
+            document.getElementById('budgetGroupWantsPlanned').textContent = formatToman(sumWantsPlanned);
+            document.getElementById('budgetGroupWantsActual').textContent = formatToman(sumWantsActual);
+
+            document.getElementById('budgetGroupSavingsPct').textContent = `${toPersianDigits(Math.round((sumSavingsPlanned / plannedInc) * 100))}٪ درآمد`;
+            document.getElementById('budgetGroupSavingsPlanned').textContent = formatToman(sumSavingsPlanned);
+            document.getElementById('budgetGroupSavingsActual').textContent = formatToman(sumSavingsActual);
+
+            const totalAllocated = sumNeedsPlanned + sumWantsPlanned + sumSavingsPlanned;
+            const diffAlloc = plannedInc - totalAllocated;
+            const warnEl = document.getElementById('budgetAllocationWarning');
+            if (diffAlloc === 0) {
+                warnEl.innerHTML = `<span class="text-emerald-400 font-bold">✅ بودجه پایه تراز است: ۱۰۰٪ درآمد اول ماه به سرفصل‌ها ماموریت داده شده است.</span>`;
+            } else if (diffAlloc > 0) {
+                warnEl.innerHTML = `<span class="text-amber-400 font-bold">⚠️ هنوز ${formatToman(diffAlloc)} از درآمد پیش‌بینی‌شده بدون ماموریت مانده است (خطر تبدیل به پرتی!).</span>`;
+            } else {
+                warnEl.innerHTML = `<span class="text-coralAccent font-bold">🚨 مجموع بودجه سرفصل‌ها ${formatToman(Math.abs(diffAlloc))} بیشتر از درآمد پیش‌بینی‌شده اول ماه است!</span>`;
+            }
+        }
+
+        function updatePlannedIncome() {
+            const val = Math.max(0, Number(document.getElementById('inpPlannedIncome').value) || 0);
+            appState.profile.plannedMonthlyIncome = val;
+            saveStateToStorage();
+            renderAll();
+        }
+
+        function apply503020Formula() {
+            const plannedIncome = Number(appState.profile.plannedMonthlyIncome) || 0;
+            if (plannedIncome <= 0) {
+                showToast('لطفاً ابتدا مبلغ درآمد پیش‌بینی‌شده اول ماه را وارد کنید.', 'warning');
+                return;
+            }
+            DEFAULT_BUDGET_CATEGORIES.forEach(cat => {
+                appState.budgets[cat.id] = Math.round(plannedIncome * cat.defaultRatio);
+            });
+            saveStateToStorage();
+            renderAll();
+            showToast('بودجه اول ماه طبق فرمول ۵۰/۳۰/۲۰ کتاب «هل اول» با موفقیت توزیع شد!', 'success');
+        }
+
+        function updateCategoryBudget(catId, newValue) {
+            appState.budgets[catId] = Math.max(0, Number(newValue) || 0);
+            saveStateToStorage();
+            renderAll();
+            showToast('سقف بودجه سرفصل بروزرسانی شد.', 'info');
+        }
+
+        // =========================================================================
+        // 8. MODULE 3: TRANSACTIONS, POCKET RECONCILIATION & OPPORTUNITY COST
+        // =========================================================================
+        function populateTxCategorySelect() {
+            const selectEl = document.getElementById('txCategoryId');
+            const txType = document.getElementById('txType').value;
+            selectEl.innerHTML = '';
+
+            const filteredCats = DEFAULT_BUDGET_CATEGORIES.filter(c => {
+                if (txType === 'saving') return c.group === 'saving';
+                if (txType === 'expense') return c.group !== 'saving';
+                return true;
+            });
+
+            filteredCats.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.textContent = cat.name;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        function handleTxTypeChange() {
+            const txType = document.getElementById('txType').value;
+            const catWrapper = document.getElementById('txCategoryWrapper');
+            const natureWrapper = document.getElementById('txNatureWrapper');
+
+            if (txType === 'income') {
+                catWrapper.classList.add('hidden');
+                natureWrapper.classList.add('hidden');
+            } else if (txType === 'saving') {
+                catWrapper.classList.remove('hidden');
+                natureWrapper.classList.add('hidden');
+                populateTxCategorySelect();
+            } else {
+                catWrapper.classList.remove('hidden');
+                natureWrapper.classList.remove('hidden');
+                populateTxCategorySelect();
+            }
+        }
+
+        function previewTxAmount() {
+            const val = Number(document.getElementById('txAmount').value) || 0;
+            document.getElementById('txAmountPreview').textContent = formatToman(val);
+        }
+
+        function handleAddTransaction(e) {
+            e.preventDefault();
+            const type = document.getElementById('txType').value;
+            const title = document.getElementById('txTitle').value.trim();
+            const amount = Math.round(Number(document.getElementById('txAmount').value) || 0);
+            const categoryId = type === 'income' ? 'housing' : document.getElementById('txCategoryId').value;
+            const nature = type === 'saving' ? 'saving' : (type === 'income' ? 'need' : document.getElementById('txNature').value);
+            const date = document.getElementById('txDate').value.trim() || getTodayJalaliShort();
+
+            if (!title || amount <= 0) {
+                showToast('لطفاً عنوان و مبلغ معتبر وارد کنید.', 'warning');
+                return;
+            }
+
+            appState.transactions.unshift({
+                id: Date.now(),
+                title,
+                amount,
+                type,
+                categoryId,
+                nature,
+                date
+            });
+
+            document.getElementById('txTitle').value = '';
+            document.getElementById('txAmount').value = '';
+            document.getElementById('txAmountPreview').textContent = '۰ تومان';
+
+            saveStateToStorage();
+            renderAll();
+
+            if (nature === 'leak') {
+                showToast(`تراکنش ثبت شد. هشدار: ${formatToman(amount)} به پرتی‌های پول این ماه اضافه شد!`, 'danger');
+            } else {
+                showToast('تراکنش جدید با موفقیت ثبت و در هرم مالی لحاظ شد.', 'success');
+            }
+        }
+
+        function deleteTransaction(id) {
+            appState.transactions = appState.transactions.filter(t => t.id !== id);
+            saveStateToStorage();
+            renderAll();
+            showToast('تراکنش حذف شد.', 'info');
+        }
+
+        function setTxFilter(filterType) {
+            currentTxFilter = filterType;
+            ['all', 'leak', 'expense', 'saving', 'income'].forEach(f => {
+                const btn = document.getElementById(`flt-${f}`);
+                if (f === filterType) {
+                    btn.className = 'tx-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 transition-all shadow';
+                } else {
+                    btn.className = 'tx-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-cardDark text-slate-300 hover:bg-slate-700 transition-all';
+                }
+            });
+            renderLeaksAndTransactionsModule(computeFinancialMetrics());
+        }
+
+        function updateReconciliation() {
+            appState.profile.initialMonthBalance = Math.max(0, Number(document.getElementById('inpInitialMonthBalance').value) || 0);
+            appState.profile.actualCurrentBalance = Math.max(0, Number(document.getElementById('inpActualCurrentBalance').value) || 0);
+            saveStateToStorage();
+            renderAll();
+        }
+
+        function recordUnexplainedLeakAsTransaction() {
+            const m = computeFinancialMetrics();
+            if (m.unexplainedLeak <= 0) {
+                showToast('خوشبختانه در حال حاضر مغایرت و پرتی پنهانی در حساب شما وجود ندارد!', 'success');
+                return;
+            }
+            appState.transactions.unshift({
+                id: Date.now(),
+                title: 'پرتی پنهان کشف‌شده در مغایرت‌گیری حساب و جیب',
+                amount: m.unexplainedLeak,
+                type: 'expense',
+                categoryId: 'entertainment',
+                nature: 'leak',
+                date: getTodayJalaliShort()
+            });
+            saveStateToStorage();
+            renderAll();
+            showToast(`${formatToman(m.unexplainedLeak)} به عنوان پرتی پنهان در لیست تراکنش‌ها ثبت شد و حساب شما تراز گردید.`, 'warning');
+        }
+
+        function updateOpportunityCost() {
+            appState.profile.annualReturnRate = Number(document.getElementById('inpAnnualReturnRate').value) || 35;
+            saveStateToStorage();
+            renderAll();
+        }
+
+        function calculateFutureValueMonthlySeries(monthlyPmt, annualRatePct, years) {
+            if (monthlyPmt <= 0) return 0;
+            const r = (annualRatePct / 100) / 12;
+            const n = years * 12;
+            if (r === 0) return monthlyPmt * n;
+            return monthlyPmt * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
+        }
+
+        function renderLeaksAndTransactionsModule(m) {
+            const initBalEl = document.getElementById('inpInitialMonthBalance');
+            const actualBalEl = document.getElementById('inpActualCurrentBalance');
+            if (initBalEl && document.activeElement !== initBalEl) initBalEl.value = appState.profile.initialMonthBalance;
+            if (actualBalEl && document.activeElement !== actualBalEl) actualBalEl.value = appState.profile.actualCurrentBalance;
+
+            document.getElementById('reconcileExpectedBalance').textContent = formatToman(m.expectedCurrentBalance);
+            document.getElementById('reconcileUnexplainedLeak').textContent = m.unexplainedLeak > 0
+                ? `${formatToman(m.unexplainedLeak)} (نشت بی‌صدا!)`
+                : '۰ تومان (حساب شما کاملاً تراز است ✅)';
+
+            // Opportunity Cost Calculation
+            const rate = Number(appState.profile.annualReturnRate) || 35;
+            document.getElementById('inpAnnualReturnRate').value = rate;
+            document.getElementById('lblAnnualReturnRate').textContent = `${toPersianDigits(rate)}٪ سالانه`;
+            document.getElementById('oppCostMonthlyLeakText').textContent = formatToman(m.totalLeaks);
+
+            const fv1 = calculateFutureValueMonthlySeries(m.totalLeaks, rate, 1);
+            const fv3 = calculateFutureValueMonthlySeries(m.totalLeaks, rate, 3);
+            const fv5 = calculateFutureValueMonthlySeries(m.totalLeaks, rate, 5);
+
+            document.getElementById('oppCost1Year').textContent = formatToman(fv1);
+            document.getElementById('oppCost3Years').textContent = formatToman(fv3);
+            document.getElementById('oppCost5Years').textContent = formatToman(fv5);
+
+            // Render Transactions Table
+            const tbody = document.getElementById('txTableBody');
+            tbody.innerHTML = '';
+
+            const catMap = {};
+            DEFAULT_BUDGET_CATEGORIES.forEach(c => catMap[c.id] = c.name);
+
+            const filteredTxs = appState.transactions.filter(tx => {
+                if (currentTxFilter === 'all') return true;
+                if (currentTxFilter === 'leak') return tx.type === 'expense' && tx.nature === 'leak';
+                return tx.type === currentTxFilter;
+            });
+
+            if (filteredTxs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-slate-500 text-xs">هیچ تراکنشی در این فیلتر یافت نشد.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredTxs.forEach(tx => {
+                let natureBadge = '';
+                if (tx.type === 'income') {
+                    natureBadge = '<span class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-[10px] font-bold">ورودی / درآمد</span>';
+                } else if (tx.type === 'saving') {
+                    natureBadge = '<span class="px-2 py-0.5 rounded-lg bg-cyan-500/15 text-cyan-300 text-[10px] font-bold">پس‌انداز و دارایی 💎</span>';
+                } else if (tx.nature === 'leak') {
+                    natureBadge = '<span class="px-2 py-0.5 rounded-lg bg-coralAccent/20 text-rose-300 border border-coralAccent/40 text-[10px] font-bold">پرتی پول و هیجانی 🔴</span>';
+                } else if (tx.nature === 'want') {
+                    natureBadge = '<span class="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 text-[10px] font-bold">خواسته با برنامه 🟡</span>';
+                } else {
+                    natureBadge = '<span class="px-2 py-0.5 rounded-lg bg-slate-700 text-slate-200 text-[10px] font-bold">ضروری 🟢</span>';
+                }
+
+                const amountClass = tx.type === 'income'
+                    ? 'text-emerald-400'
+                    : (tx.type === 'saving' ? 'text-cyan-400' : (tx.nature === 'leak' ? 'text-coralAccent' : 'text-slate-200'));
+                const prefix = tx.type === 'income' ? '+' : '-';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/40 transition-all';
+                tr.innerHTML = `
+                    <td class="py-3 pr-2 text-xs text-slate-400 whitespace-nowrap">${escapeHtml(tx.date)}</td>
+                    <td class="py-3 px-2 font-bold text-white text-xs">${escapeHtml(tx.title)}</td>
+                    <td class="py-3 px-2 text-[11px] text-slate-400">${tx.type === 'income' ? 'درآمد ماهانه' : (catMap[tx.categoryId] || 'سایر')}</td>
+                    <td class="py-3 px-2 whitespace-nowrap">${natureBadge}</td>
+                    <td class="py-3 px-2 font-extrabold text-xs whitespace-nowrap ${amountClass}">${prefix}${formatToman(tx.amount)}</td>
+                    <td class="py-3 pl-2 text-left">
+                        <button type="button" title="حذف تراکنش" class="text-slate-500 hover:text-coralAccent p-1.5 rounded-lg hover:bg-slate-800 transition-all">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </td>
+                `;
+                tr.querySelector('button').addEventListener('click', () => deleteTransaction(tx.id));
+                tbody.appendChild(tr);
+            });
+        }
+
+        // =========================================================================
+        // 9. MODULE 4: 4 INTERACTIVE CHARTS (Chart.js)
+        // =========================================================================
+        function renderAllCharts() {
+            const m = computeFinancialMetrics();
+            Chart.defaults.font.family = 'Vazirmatn, Tahoma, sans-serif';
+            Chart.defaults.color = '#94a3b8';
+
+            // 1. Bar Chart: Planned Budget vs Actual Spending per Category
+            const ctxBar = document.getElementById('chartBudgetVsActual').getContext('2d');
+            if (chartInstances.budgetVsActual) chartInstances.budgetVsActual.destroy();
+
+            const catLabels = DEFAULT_BUDGET_CATEGORIES.map(c => c.name);
+            const plannedData = DEFAULT_BUDGET_CATEGORIES.map(c => Number(appState.budgets[c.id]) || 0);
+            const actualData = DEFAULT_BUDGET_CATEGORIES.map(c => Number(m.actualByCategory[c.id]) || 0);
+
+            chartInstances.budgetVsActual = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: catLabels,
+                    datasets: [
+                        {
+                            label: 'بودجه مصوب اول ماه',
+                            data: plannedData,
+                            backgroundColor: 'rgba(6, 182, 212, 0.55)',
+                            borderColor: '#06b6d4',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'عملکرد واقعی تا امروز',
+                            data: actualData,
+                            backgroundColor: actualData.map((val, idx) => val > plannedData[idx] ? 'rgba(244, 63, 94, 0.85)' : 'rgba(16, 185, 129, 0.85)'),
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { color: '#e2e8f0', font: { size: 11 } } }
+                    },
+                    scales: {
+                        x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 25 }, grid: { display: false } },
+                        y: { ticks: { font: { size: 10 } }, grid: { color: '#1e293b' } }
+                    }
+                }
+            });
+
+            // 2. Doughnut Chart: Quality of Outflows
+            const ctxDonut = document.getElementById('chartQualityDonut').getContext('2d');
+            if (chartInstances.qualityDonut) chartInstances.qualityDonut.destroy();
+
+            chartInstances.qualityDonut = new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        'نیازهای ضروری (Needs)',
+                        'خواسته‌های با برنامه (Wants)',
+                        'پرتی‌های ثبت‌شده + پنهان (Money Leaks)',
+                        'پس‌انداز و سرمایه‌گذاری (Savings)'
+                    ],
+                    datasets: [{
+                        data: [
+                            m.essentialExpenses,
+                            m.plannedWantsExpenses,
+                            m.totalLeaks,
+                            Math.max(m.totalSavingsTx, m.effectiveSavings)
+                        ],
+                        backgroundColor: ['#06b6d4', '#f59e0b', '#f43f5e', '#10b981'],
+                        borderColor: '#111827',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#e2e8f0', padding: 14, font: { size: 11 } } }
+                    }
+                }
+            });
+
+            // 3. Radar Chart: 5 Financial Health Scores (0 to 100)
+            const ctxRadar = document.getElementById('chartHealthRadar').getContext('2d');
+            if (chartInstances.healthRadar) chartInstances.healthRadar.destroy();
+
+            const scoreSavings = Math.min(100, Math.max(0, Math.round((m.savingsRate / 25) * 100)));
+            const scoreEmergency = m.requiredEmergencyFund > 0 ? Math.min(100, Math.round((m.currentEmergencyFund / m.requiredEmergencyFund) * 100)) : 100;
+            const leakRatioPct = m.totalIncome > 0 ? (m.totalLeaks / m.totalIncome) * 100 : 0;
+            const scoreLeakControl = Math.max(0, Math.min(100, Math.round(100 - (leakRatioPct * 4))));
+            const overBudgetCount = DEFAULT_BUDGET_CATEGORIES.filter(c => c.group !== 'saving' && (m.actualByCategory[c.id] || 0) > (appState.budgets[c.id] || 0)).length;
+            const scoreBudgetDiscipline = Math.max(0, 100 - (overBudgetCount * 15));
+            const scoreDebtFree = m.badDebt <= 0 ? 100 : Math.max(10, Math.round(100 - ((m.badDebt / Math.max(1, m.totalIncome)) * 100)));
+
+            chartInstances.healthRadar = new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: [
+                        'نرخ پس‌انداز',
+                        'پوشش صندوق اضطراری',
+                        'مهار پرتی پول',
+                        'پایبندی به سقف بودجه',
+                        'رهایی از بدهی بد'
+                    ],
+                    datasets: [{
+                        label: 'امتیاز سلامت مالی شما (از ۱۰۰)',
+                        data: [scoreSavings, scoreEmergency, scoreLeakControl, scoreBudgetDiscipline, scoreDebtFree],
+                        backgroundColor: 'rgba(16, 185, 129, 0.22)',
+                        borderColor: '#10b981',
+                        pointBackgroundColor: '#06b6d4',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 100,
+                            angleLines: { color: '#334155' },
+                            grid: { color: '#334155' },
+                            pointLabels: { color: '#e2e8f0', font: { size: 11, weight: 'bold' } },
+                            ticks: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e2e8f0' } }
+                    }
+                }
+            });
+
+            // 4. Line Chart: 12-Month Wealth Projection (Current Path vs Zero-Leak Path)
+            const ctxLine = document.getElementById('chartWealthProjection').getContext('2d');
+            if (chartInstances.wealthProjection) chartInstances.wealthProjection.destroy();
+
+            const baseWealth = m.currentEmergencyFund + m.investedAssets;
+            const monthlyRate = ((Number(appState.profile.annualReturnRate) || 35) / 100) / 12;
+            const currentMonthlyAdd = Math.max(0, m.freeCashFlow);
+            const optimizedMonthlyAdd = currentMonthlyAdd + m.totalLeaks;
+
+            const monthsLabels = [];
+            const currentPathData = [];
+            const zeroLeakPathData = [];
+
+            let wCurrent = baseWealth;
+            let wOptimized = baseWealth;
+
+            for (let i = 1; i <= 12; i++) {
+                monthsLabels.push(`ماه ${toPersianDigits(i)}`);
+                wCurrent = (wCurrent * (1 + monthlyRate)) + currentMonthlyAdd;
+                wOptimized = (wOptimized * (1 + monthlyRate)) + optimizedMonthlyAdd;
+                currentPathData.push(Math.round(wCurrent));
+                zeroLeakPathData.push(Math.round(wOptimized));
+            }
+
+            chartInstances.wealthProjection = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: monthsLabels,
+                    datasets: [
+                        {
+                            label: 'مسیر بهینه «هل اول» (با حذف کامل پرتی‌های پول)',
+                            data: zeroLeakPathData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            fill: true,
+                            tension: 0.35,
+                            borderWidth: 2.5
+                        },
+                        {
+                            label: 'مسیر فعلی شما (با ادامه پرتی‌های فعلی)',
+                            data: currentPathData,
+                            borderColor: '#f59e0b',
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.35,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { color: '#e2e8f0', font: { size: 11 } } }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: '#1e293b' } }
+                    }
+                }
+            });
+        }
+
+        // =========================================================================
+        // 10. MODULE 5: HABIT CHECKLIST & DATA BACKUP/RESTORE
+        // =========================================================================
+        function renderChecklistModule() {
+            const container = document.getElementById('habitChecklistContainer');
+            container.innerHTML = '';
+            let checkedCount = 0;
+
+            appState.checklist.forEach(item => {
+                if (item.checked) checkedCount++;
+                const div = document.createElement('div');
+                div.onclick = () => toggleChecklistItem(item.id);
+                div.className = `cursor-pointer p-3.5 rounded-xl border transition-all flex items-center gap-3 ${
+                    item.checked
+                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-200'
+                        : 'bg-cardDark/60 border-slate-700/80 text-slate-300 hover:border-slate-600'
+                }`;
+                div.innerHTML = `
+                    <div class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                        item.checked ? 'bg-emerald-500 text-slate-950' : 'bg-baseBg border border-slate-600'
+                    }">
+                        ${item.checked ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+                    </div>
+                    <span class="text-xs font-medium leading-relaxed ${item.checked ? 'line-through opacity-90' : ''}">${escapeHtml(item.title)}</span>
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('checklistScoreBadge').textContent = `${toPersianDigits(checkedCount)} از ${toPersianDigits(appState.checklist.length)} عادت`;
+        }
+
+        function toggleChecklistItem(id) {
+            const item = appState.checklist.find(i => i.id === id);
+            if (item) {
+                item.checked = !item.checked;
+                saveStateToStorage();
+                renderChecklistModule();
+            }
+        }
+
+        function exportDataJson() {
+            const dataStr = JSON.stringify(appState, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hal-e-avval-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('فایل پشتیبان (JSON) با موفقیت دانلود شد.', 'success');
+        }
+
+        function importDataJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported && imported.profile && imported.budgets && Array.isArray(imported.transactions)) {
+                        appState = imported;
+                        saveStateToStorage();
+                        renderAll();
+                        showToast('اطلاعات شما با موفقیت از فایل پشتیبان بازگردانی شد!', 'success');
+                    } else {
+                        showToast('ساختار فایل JSON معتبر نیست.', 'danger');
+                    }
+                } catch (err) {
+                    showToast('خطا در خواندن فایل پشتیبان.', 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function promptLoadSampleData() {
+            openConfirmModal(
+                'بارگذاری داده‌های نمونه',
+                'آیا مایلید داده‌های نمونه واقع‌گرایانه برای تست سریع هرم مالی، بودجه‌بندی و شکارچی پرتی پول بارگذاری شود؟',
+                () => {
+                    appState = createDefaultSampleState();
+                    saveStateToStorage();
+                    renderAll();
+                    openView('pyramid');
+                    showToast('داده‌های نمونه با موفقیت بارگذاری شد.', 'success');
+                }
+            );
+        }
+
+        function promptClearAllData() {
+            openConfirmModal(
+                'پاکسازی کامل اطلاعات و شروع از صفر',
+                'تمامی تراکنش‌ها و اعداد نمونه پاک می‌شوند تا بتوانید اعداد واقعی زندگی خود را از صفر وارد کنید. آیا ادامه می‌دهید؟',
+                () => {
+                    const emptyBudgets = {};
+                    DEFAULT_BUDGET_CATEGORIES.forEach(c => emptyBudgets[c.id] = 0);
+                    appState = {
+                        activeView: 'budget',
+                        selectedPyramidLevelInspect: 1,
+                        profile: {
+                            emergencyFund: 0,
+                            badDebt: 0,
+                            investedAssets: 0,
+                            emergencyTargetMonths: 3,
+                            passiveIncome: 0,
+                            plannedMonthlyIncome: 0,
+                            initialMonthBalance: 0,
+                            actualCurrentBalance: 0,
+                            annualReturnRate: 35
+                        },
+                        budgets: emptyBudgets,
+                        transactions: [],
+                        checklist: JSON.parse(JSON.stringify(BOOK_HABIT_CHECKLIST)).map(i => ({ ...i, checked: false }))
+                    };
+                    saveStateToStorage();
+                    renderAll();
+                    openView('budget');
+                    showToast('همه داده‌ها صفر شدند. ابتدا بودجه اول ماه خود را وارد کنید!', 'info');
+                }
+            );
+        }
+
+        // =========================================================================
+        // 11. INITIALIZATION ON WINDOW LOAD
+        // =========================================================================
+        window.onload = function() {
+            startLiveClock();
+            document.getElementById('txDate').value = getTodayJalaliShort();
+            populateTxCategorySelect();
+            renderAll();
+            openView(appState.activeView || 'pyramid');
+        };
+    </script>
+</body>
+</html>
